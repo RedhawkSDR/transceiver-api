@@ -6,7 +6,7 @@ weight: 30
 ## Current FRONTEND Tuner Data Structures
 ### Allocation Structures
 #### Control Allocation
-The `frontend_tuner_allocation_struct` is shown below.  
+The `frontend_tuner_allocation_struct` is shown below.
 ```C++
     struct frontend_tuner_allocation_struct {
         std::string tuner_type;
@@ -63,9 +63,37 @@ The `existing_allocation_id` should be the controlling allocation id.  The `list
 
 ### Existing BULKIO
 ```C++
-
+    interface dataShort : ProvidesPortStatisticsProvider, updateSRI {
+        void pushPacket(in PortTypes::ShortSequence data,
+                        in PrecisionUTCTime T,
+                        in boolean EOS,
+                        in string streamID);
+    };
 ```
 
+<div class="panel panel-success">
+**Design Comments**
+{: .panel-heading}
+<div class="panel-body">
+The `PrecisionUTCTime` attibute allows the data to be _scheduled_ at a precise instant in time.
+The 'EOS' stream is not really useful for the _start-of-burst_ and _end-of-burst_ functionality that would be required for a device to comprehend _buffer overrun_ and _buffer underrun_.
+</div>
+</div>
+
+The `PrecisionUTCTime` stamp provides a
+
+The `streamID` correlates directly to a `StreamSRI` supplied by a `pushSRI` call, which comes from the `updateSRI` inherited interface of the port.
+
+```C++
+    interface updateSRI {
+        // List of all active streamSRIs (that have not been ended)
+        readonly attribute StreamSRISequence activeSRIs;
+
+        void pushSRI(in StreamSRI H);
+    };
+```
+
+The `StreamSRI` contains a structure of data about the data to be pushed the `pushPacket` interface.
 
 ## TunerControl Extensions
 ```C++
