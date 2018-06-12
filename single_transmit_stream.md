@@ -7,13 +7,27 @@ characteristics.
 * The transmission should be limited to a bandwidth.
 * The data to be transmitted is sampled at a specific rate.
 
+In this scenario, the user sets up a radio device, which can be conceptualized
+most simply as a Digital Up Convertor (DUC) and then sends data to it that should
+be transmitted at a specific time.
+
+## Design Goals
+This is the simplest transmit case and can be accomodated using the
+
+## Overview of Order of Operations
+1. Allocate a DUC on an FEI device.
+2. Configure the RF center frequency, sample rate, bandwidth, gain (and possibly
+phase delay) of the DUC.
+3. Send data to be transmitted at an instant in time.  The instant may be _now_.
+4. Recieve messages from the device if any error conditions occur.
+
 ## Current Capability
 This use case can be partially accomplished using the existing API.  As such,
 this document enumerates how a single stream of data can be transmitted using
 the existing APIs.  In working through this simple case we identify deficiencies
 of the existing API that must be addressed for more complex transmit CONOPs.
 
-1. Allocate a TX tuner with the values you intend mapped to a
+1. Allocate a TX tuner (_the conceptual DUC_) with the values you intend mapped to a
 `frontend_tuner_allocation_struct`.  For the simplest transmit use case, this
 should be sufficient configuration to be able to just send data with timestamps
 to the tuner.
@@ -40,35 +54,14 @@ to the tuner.
        delivered in time to make it contiguous with the previous `stream.write()`.
        This suggests a buffer **underrun** error.
 
-    b. if the timestamp is non-zero, disable any buffer underrun logic, wait till the requested time to transmit the data.
+    b. if the timestamp is non-zero, disable any buffer underrun logic, wait till
+       the requested time to transmit the data.
 
-4.   If data is pushed to the device faster than it can buffer and transmit the data
-     a buffer **overrun** error should occur.
+4.  If data is pushed to the device **faster** than it can buffer and transmit the data
+    a buffer **overrun** error should occur.  If the data is pushed to the device
+    **slower** than is required to prevent a `xdelta` gap in the transmitted
+    waveform a buffer **underrun** should occur.
 
-## Extensions to the frontend_status_struct
-In order to provide more insight into whether the device will be able to push
-data at a particular time, it is recommended that the `frontend_tuner_status`
-structure be extended with
-
-```C++
-double referenceSettlingTime;  // 0 if less than 1 microsecond else nearest
-                               // microsecond
-```
-The current `default_frontend_status_struct` contains the following required paramaters:
-```C++
-struct default_frontend_tuner_status_struct_struct {
-
-        std::string tuner_type;
-        std::string allocation_id_csv;
-        double      center_frequency;
-        double      bandwidth;
-        double      sample_rate;
-        std::string group_id;
-        std::string rf_flow_id;
-        bool        enabled;
-    };
-    static std::string getId() { return std::string("frontend_tuner_status_struct"); }
-```
 
 ## Notes
 
@@ -99,10 +92,7 @@ timestamp for each successive call (painful) or we have to accept a zero-ized
 timestamp as an indication that we just want the data pushed out and are
 expecting it to be contiguous with the last `pushPacket` call.
 
-### EOS
-There is no way to push an EOS through a stream without just closing the stream.
-
-### Data Sample Rate
+ ### Data Sample Rate
 The `stream.xdelta` should not *control* the output sample rate, but should only
 indicate what the sample rate of the data stream is.  The actual DAC sample rate
 **shall** be set by the initial tuner allocation call using the
@@ -111,14 +101,14 @@ indicate what the sample rate of the data stream is.  The actual DAC sample rate
 Removing the above requirement allows the `pushSRI` and `pushPacket` calls to
 *control* the transmit frequency, bandwidth, and sample rate of the data.  Each
 change of the SRI, shown below for convenience, would still require a **new**
-stream since we have no way of pushing and EOS.  
+stream since we have no way of pushing and EOS.
 
 
 
 The device must be
 responsible for either resampling the data to
 There are two conditions that are worth considering regarding the sample rate
-specified by `xdelta`.  
+specified by `xdelta`.
 
 1.  The DAC (or some resampler) on the device may not be able to achieve the exact
  sample rate requested.  For this simple case, the user must request the desired

@@ -1,7 +1,39 @@
 ---
-title: "Transceiver API"
+title: "REDHAWK API Review"
 weight: 30
 ---
+## FRONTEND Tuner Control APIs
+REDHAWK is designed to support command and control in two different ways.  The
+different methods are intended to provide for two unique CONOPs that are worth
+reviewing.  The **first CONOP** is for an application that requires no
+particular or specialized use of radio hardware; the application simply wants to
+receive pre-d or transmit modulated data from any available radio hardware.
+This application is only loosely coupled with radio hardware and need only use
+the REDHAWK `Device` interface, which defines an abstract device with
+_capacities_, and BULKIO.   **Caveat:** _the application must obviously know how
+to format the tuner allocation  and status properties._  The **second CONOP** is
+an application that is _more integrated_ with the radio hardware and wishes to
+make more specialized use of a radio's features. The `AnalogTuner`,
+`DigitalTuner`, and `ScanningTuner` interfaces of REDHAWK's FRONTEND module are
+for this purpose.  These applications must still use the `allocateCapacity`
+interface like the first CONOP, but now require an additional port to interface
+to the radio hardware.
+
+The major benefit of this approach is that an application with no knowledge of
+radio hardware can be integrated into any REDHAWK system through simple text
+modifications to it's SAD file.  No other integration effort is required other than
+to add a `usesdevice` relationship with a `frontend_tuner_allocation_struct`
+property (in the simplest case).
+
+For the sake of developing a grammar to aid discussion of this topic we will
+adopt the following:
+
+* Loosely Integrated Radio Pattern - this is the "first CONOP" that
+  requires an application to use only the `Device` and `BULKIO` interfaces.
+
+* Integrated Radio Pattern - this is the "second CONOP" that requires an application
+  to implement a FrontendTuner port to accomplish specific control of the radio
+  device beyond just allocation and deallocation.
 
 ## Current FRONTEND Tuner Data Structures
 ### Allocation Structures
@@ -56,12 +88,12 @@ A *listener* allocation is used when no control over the tuner is required.  Thi
 ```
 The `existing_allocation_id` should be the controlling allocation id.  The `listener_allocation_id` can then be handed to processing waveforms without fear of their misusing the *system* level tuner resource.
 
-## Multi-Channel Allocation
+## Existing BULKIO
 
+The existing BULKIO (and BURSTIO) APIs are identified and discussed in the context
+of how they may or may not support transmit CONOPs.
 
-## BULKIO Extensions
-
-### Existing BULKIO
+### API : `pushPacket`
 ```C++
     interface dataShort : ProvidesPortStatisticsProvider, updateSRI {
         void pushPacket(in PortTypes::ShortSequence data,
@@ -71,19 +103,17 @@ The `existing_allocation_id` should be the controlling allocation id.  The `list
     };
 ```
 
-<div class="panel panel-success">
-**Design Comments**
-{: .panel-heading}
-<div class="panel-body">
-The `PrecisionUTCTime` attibute allows the data to be _scheduled_ at a precise instant in time.
-The 'EOS' stream is not really useful for the _start-of-burst_ and _end-of-burst_ functionality that would be required for a device to comprehend _buffer overrun_ and _buffer underrun_.
-</div>
-</div>
+The `pushPacket` functionality has been mapped onto a _stream_ since the REDHAWK
+2.0 LTS.  Now, `streamID` is inherint to the _stream_ object that a user creates.
+`EOS` is sent when `close()` is called on the stream.  The `write()` method of a
+stream takes the data buffer to be sent and the timestamp to send the data at.
 
-The `PrecisionUTCTime` stamp provides a
+##### Observations : `pushPacket`
+* The `PrecisionUTCTime` attibute allows the data to be _scheduled_ at a precise instant in time.
+* The 'EOS' flag is not really useful for the _start-of-burst_ and _end-of-burst_ functionality that would be required for a device to comprehend _buffer overrun_ and _buffer underrun_ because there is no way to push an EOS through the stream without just closing the stream.
+* The `streamID` correlates directly to a `StreamSRI` supplied by a `pushSRI` call, which comes from the `updateSRI` inherited interface of the port.
 
-The `streamID` correlates directly to a `StreamSRI` supplied by a `pushSRI` call, which comes from the `updateSRI` inherited interface of the port.
-
+#### API : `updateSRI`
 ```C++
     interface updateSRI {
         // List of all active streamSRIs (that have not been ended)
@@ -93,8 +123,69 @@ The `streamID` correlates directly to a `StreamSRI` supplied by a `pushSRI` call
     };
 ```
 
-The `StreamSRI` contains a structure of data about the data to be pushed the `pushPacket` interface.
+#### Observations : `updateSRI`
+* Th
+* The `StreamSRI` contains a structure of data about the data to be pushed the `pushPacket` interface.
 
+
+### API : `StreamSRI`
+```C++
+    struct StreamSRI {
+        long hversion;    /* version of the StreamSRI header */
+        double xstart;    /* start time of the stream */
+        double xdelta;    /* delta between two samples */
+        short xunits;     /* unit types from Platinum specification; common codes defined above */
+        long subsize;     /* 0 if the data is one dimensional; > 0 if two dimensional */
+        double ystart;    /* start of second dimension */
+        double ydelta;    /* delta between two samples of second dimension */
+        short yunits;     /* unit types from Platinum specification; common codes defined above */
+        short mode;       /* 0-Scalar, 1-Complex */
+        string streamID;  /* stream identifier */
+        boolean blocking; /* flag to determine whether the receiving port should exhibit back pressure*/
+        sequence<CF::DataType> keywords; /* user defined keywords */
+    };
+
+    typedef sequence<StreamSRI> StreamSRISequence;
+```
+
+#### Observations : `StreamSRI`
+
+
+### BULKIO Error Codes and Exceptions
+There are no BULKIO error codes and excpetions.  They all get swallowed by the core
+framework.  How then does a user know when the `stream.write()` or `pushPacket() call
+is working or not?
+
+```C++
+  void OutPort<PortType>::_sendPacket(
+          const BufferType&               data,
+          const BULKIO::PrecisionUTCTime& T,
+          bool                            EOS,
+          const std::string&              streamID)
+  {
+    // ... block of code folded
+
+
+    if (active) {
+
+            // ... block of code folded
+
+            try {
+                transport->pushSRI(streamID, stream.sri(), stream.modcount());
+                transport->pushPacket(data, T, EOS, streamID, stream.sri());
+            } catch (const redhawk::FatalTransportError& err) {
+                LOG_ERROR(_portLog, "PUSH-PACKET FAILED " << err.what()
+                          << " PORT/CONNECTION: " << name << "/" << connection_id);
+                transport->setAlive(false);
+            } catch (const redhawk::TransportError& err) {
+                LOG_ERROR(_portLog, "pushPacket error on connection '" << connection_id << "': " << err.what());
+            }
+        }
+    }
+  }
+```
+
+# THIS IS OLD GARBAGE THAT NEEDS TO BE CLEANED UP
 ## TunerControl Extensions
 ```C++
    struct TxOperation {
