@@ -1,8 +1,5 @@
 
----
-title: "FEI Modifications"
-weight: 30
----
+Title: "FEI Modifications"
 
 # Table of Contents
 | [Objective](#objective)
@@ -14,7 +11,8 @@ weight: 30
 |: |
 | [Provide allocation_id or connection_id in StreamSRI](#provide-allocation_id-or-connection_id-in-streamsri) |
 | [Transmit Status / Error Reporting](#transmit-status-error-reporting) |
-|   |
+| [Allocation for Multi-channel Transmit (or Receive)](#allocation-for-multi-channel-transmit-or-receive)  |
+| [Add referenceSettlingTime to frontend_tuner_status Definition](#add-referencesettlingtime-to-frontend_tuner_status-definition)   |
 
 # Objective
 This file is intended to capture a draft proposal for changes to the REDHAWK
@@ -44,20 +42,6 @@ as well.   The design suggestions below attempt to:
 conveyance APIs.
 
 # Overall Questions for Core Framework
-
-1. `referenceSettlingTime` : an attribute of a device that summarizes the
-cumulative settling time required when a _retune_ even occurs (adjustments to
-center frequency, sample rate, bandwidth)
-
-    a.  Can we add this property to the `AnalogTuner` interface and then
-    advertise it in the `FRONTEND::tuner_status` structure?
-
-    b.  Should it just be '0' if the device doesn't support it? c.  Does this
-    not beg the question whether we should have a flag to indicate whether all
-    settling times have been accomplished and the devices PLLs are _locked_?
-
-2.  `frontend_array_allocation_struct` - a new allocation structure for coherent
-    Rx or Tx tuners.  See [here](#the-multi-channel-allocation).
 
 3.  Don't have a way to send RF characteristics @ the same time we send data.
     This becomes important when a block of data needs to be transmitted at specific
@@ -401,7 +385,7 @@ canse the device should return exactly the tuners requested if they are able to
 be allocated.
 
 
-## Add referenceSettlingTime to frontend_tuner_status Definition 
+## Add referenceSettlingTime to frontend_tuner_status Definition
 
 In order to provide more insight into whether the device will be able to push
 data at a particular time, it is recommended that the `frontend_tuner_status`
@@ -427,6 +411,118 @@ struct default_frontend_tuner_status_struct_struct {
     };
     static std::string getId() { return std::string("frontend_tuner_status_struct"); }
 ```
+
+## Proposal 1 : Add referenceSettlingTime to `frontend_tuner_status_struct`
+Define `referenceSettlingTime` as an attribute of a device that summarizes the
+cumulative settling time required when a _retune_ event occurs (adjustments to
+center frequency, sample rate, bandwidth)
+
+Add this property to the `AnalogTuner` interface and then advertise it in the
+`FRONTEND::tuner_status` structure.
+
+```C++
+struct default_frontend_tuner_status_struct_struct {
+
+        std::string tuner_type;
+        std::string allocation_id_csv;
+        double      center_frequency;
+        double      bandwidth;
+        double      sample_rate;
+        double      referenceSettlingTime; // NEW FIELD, units = microseconds.
+        std::string group_id;
+        std::string rf_flow_id;
+        bool        enabled;
+    };
+    static std::string getId() { return std::string("frontend_tuner_status_struct"); }
+```
+
+The referenceSettlingTime should be set to '0' if the device doesn't support it.
+
+_**Question**:  Does this not beg the question whether we should have a flag to
+indicate whether all settling times have been accomplished and the devices PLLs
+are _locked_?_
+
+## Radio Control Using StreamSRI Keywords.
+There are two ways to control the _radio_ portion of an FEI device.  In this
+case the _radio_ portion is defined as the following collection of settings for
+each tuner:
+
+  1. RF center frequency
+  2. Bandwidth (both analog and digital)
+  3. Sample rate
+  4. Gain
+
+_**Note**: there are other control facilities provided by the
+`TunerControl.idl`, but these are generally set globally and never changed
+during an applications use of a device.  Some of these controls include
+'ReferenceSource' selection, 'Tuner Enable', and 'TunerAgcEnable', to name a
+few_
+
+The _radio_ may be configured using the `frontend_tuner_allocation_struct` with
+an `allocateCapacity` call or the _radio_ may be configured using the individual
+setter/getter methods defined by the `AnalogTuner` and `DigitalTuner`
+interfaces.
+
+There are several challenges in providing only these two methods of control.
+
+  1. While 'allocation' is an acceptable way to configure the radio, it can be a
+  _slow_ process and requires that the device first be deallocated.  It is
+  possible that the device will not be available for further allocation in a
+  resource competitive environment.  Then a search for an available device must
+  occur.  This does not allow for a time-constrained use-case.
+  2. While all _radio_ settings can be changed using the `AnalogTuner` and
+  `DigitalTuner` interfaces, each change may incur additional settling time.
+  Since the radio settings must be changed individually using these interfaces,
+  the overrall time to update the radio may be at least 4 times the settling
+  time.
+  3. Stakeholders have reported scenarios with certain devices where the order
+  in which the _radio_ settings are changed becomes important.  While the device
+  should be expected to handle this type of ordering, it is not possible if the
+  settings are not presented atomically.
+  4. The current _radio_ control does not allow for the 'Time Multiplexed Single
+  Channel' CONOP presented by AFRL.  There is no way to queue a _radio_ control
+  profile.
+
+### Proposal 1 : Radio Control Using frontend_tuner_allocation_struct as StreamSRI Keyword
+Specify a defined behavior of all FEI compliant devices that they accept an
+`frontend_tuner_allocation_struct` as a `StreamSRI` keyword to effect atomic
+configuration of the radio's settings.
+
+#### Pros :
+
+* Many stakeholders have asked for atomic configuration of the radio.
+
+* REDHAWK has provided a similar capability through the `ScanningTuner` for the
+  receive use-case.
+
+* Allows for the 'Time Multiplexed Single Channel' CONOP presented by AFRL.  An
+  application employing this CONOP would implement the following pseudo code.
+  Suggested changes to the REDHAWK `Device` pattern and ways to status and
+  manipulate a device's transmit transaction queue will be discussed in other
+  sections of this document.
+
+  ```C++
+    queue <bulkio::OutFloatStream> transactionQ;
+
+    for each burst to be enqueued
+
+      // must have a unique streamID - this will serve as the transaction id
+      string uniqueId = uniqueId_generator();
+
+      // get and keep the stream
+      transactionQ.push_back( port->createStream( uniqueId) );
+
+      // set SRI for unique RF information
+      transactionQ.back().xdelta( 1.0 / burst_specific_sample_rate );
+      transactionQ.back().setKeyword( "FRONTEND::tuner_allocation", burst_specific_tuner_alloc_struct );
+
+      // add data and the desired time of transmission
+      transactionQ.back().write( some_buffer, time_to_transmit_burst );
+  ```
+
+#### Cons :
+* As a non-IDL API pattern, there is little opportunity to validate and qualify the
+formatting of the keyword and mandate a device's processing of it.
 
 # Gaps
 ## Transmit Buffer Management
