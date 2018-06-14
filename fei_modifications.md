@@ -11,9 +11,10 @@ Title: "FEI Modifications"
 |: |
 | [Provide allocation_id or connection_id in StreamSRI](#provide-allocation_id-or-connection_id-in-streamsri) |
 | [Transmit Status / Error Reporting](#transmit-status-error-reporting) |
-| [Allocation for Multi-channel Transmit (or Receive)](#allocation-for-multi-channel-transmit-or-receive)  |
-| [Add referenceSettlingTime to frontend_tuner_status Definition](#add-referencesettlingtime-to-frontend_tuner_status-definition)   |
-| [Radio Control Using StreamSRI Keywords](#radio-control-using-streamsri-keywords)   |
+| [Allocation for Multi-channel Transmit (or Receive)](#allocation-for-multi-channel-transmit-or-receive) |
+| [Add referenceSettlingTime to frontend_tuner_status Definition](#add-referencesettlingtime-to-frontend_tuner_status-definition) |
+| [Radio Control Using StreamSRI Keywords](#radio-control-using-streamsri-keywords) |
+| [Extend `DigitalTuner` Interface to Support Transmit Queue]()   |
 
 # Objective
 This file is intended to capture a draft proposal for changes to the REDHAWK
@@ -489,6 +490,8 @@ Specify a defined behavior of all FEI compliant devices that they accept an
 `frontend_tuner_allocation_struct` as a `StreamSRI` keyword to effect atomic
 configuration of the radio's settings.
 
+_**Concern**: the `StreamSRI` already has a hard requirement on the `xdelta` and REDHAWK already has a convention for `CHAN_RF` and `COL_RF`.  Perhaps we should just add keywords for the bandwidth and the gain?  This would affect the proposed IDL for QueuedTransmitter interface below._
+
 #### Pros :
 
 * Many stakeholders have asked for atomic configuration of the radio.
@@ -524,6 +527,64 @@ configuration of the radio's settings.
 #### Cons :
 * As a non-IDL API pattern, there is little opportunity to validate and qualify the
 formatting of the keyword and mandate a device's processing of it.
+
+## Extend `DigitalTuner` Interface to Support Transmit Queue
+
+```C++
+    interface QueuedTransmitter : DigitalTuner
+    {
+        struct TunerActions {
+            BULKIO::PrecisionUTCTime transmitTime;
+            string streamID;                         // this should be the unique transaction id
+            CF::Property tuner_alloc_struct;         // possibly change this to a discrete list
+            CF::Properties additional_properties;
+        };
+
+        typedef sequence <TunerAction> TunerActions;
+
+        // alternative to using 'tuner_alloc_struct'
+        struct TunerConfig {
+            double center_frequency;
+            double sample_rate;
+            double bandwidth;
+            float  gain;
+        };
+
+        TunerActions getTunerActions( in string id );  // id = allocation_id
+
+        void cancelTunerAction( in string id, in string transactionId );
+    };
+```
+
+Internally, the device would keep a list of TunerActions for each allocated
+tuner.  the `streamID` is the unique transaction id by which both the radio
+settings and the data to be sent can be uniquely correlated and indexed.
+
+All TunerActions returned from the queue have not yet been started.
+
+A TunerAction is immediately removed from the queue when effected.
+
+All radio configuration settings (like rf center frequency) would be subject to
+the tolerance values specified at allocation time.
+
+`additional_properties` can be used for either mode selection or transmit repitition commands.  These commands would be very device and implementation specific.
+
+Status for each TunerAction will be conveyed through the transmit status port proposed [above](#transmit-status-error-reporting).
+
+#### Pros :
+* Provides a hardware queue for transmit operations that can support both
+  transmit data as well as _mode_ selection using additional `StreamSRI`
+  keywords.
+
+* Prevents the need for `FrontendTuner` ports with strong data types.
+
+* Very flexible - ultimately allows for any metadata to be pushed to a device through `StreamSRI` keywords and then leaves the interpretation of what to do with those keywords up to the device (this same statement should appear in the 'Cons' section as well).
+
+#### Cons :
+* It seems cumbersome to manage the TunerActions.  How realistic is it to believe that there is a real use-case for canceling a queued action?
+
+* Makes heavy use of SRI keywords in order to continue using BULKIO rather than adding new `FrontendTuner` ports.  The rationale is based on the complexity and loss of portability caused by adding _data_ to the tuner ports.  Each port would then have to be overloaded for all supported data types and would become incompatible with other tuner ports of different data types.
+
 
 # Gaps
 ## Transmit Buffer Management
