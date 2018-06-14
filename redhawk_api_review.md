@@ -2,28 +2,26 @@
 title: "REDHAWK API Review"
 weight: 30
 ---
-## FRONTEND Tuner Control APIs
+# Background on REDHAWK API Design
 REDHAWK is designed to support command and control in two different ways.  The
 different methods are intended to provide for two unique CONOPs that are worth
 reviewing.  The **first CONOP** is for an application that requires no
-particular or specialized use of radio hardware; the application simply wants to
-receive pre-d or transmit modulated data from any available radio hardware.
+particular or _specialized_ use of radio hardware; the application simply wants
+to receive pre-d or transmit modulated data from any available radio hardware.
 This application is only loosely coupled with radio hardware and need only use
 the REDHAWK `Device` interface, which defines an abstract device with
-_capacities_, and BULKIO.   **Caveat:** _the application must obviously know how
-to format the tuner allocation  and status properties._  The **second CONOP** is
-an application that is _more integrated_ with the radio hardware and wishes to
-make more specialized use of a radio's features. The `AnalogTuner`,
-`DigitalTuner`, and `ScanningTuner` interfaces of REDHAWK's FRONTEND module are
-for this purpose.  These applications must still use the `allocateCapacity`
-interface like the first CONOP, but now require an additional port to interface
-to the radio hardware.
+_capacities_ and BULKIO.  The **second CONOP** is an application that is _more
+integrated_ with the radio hardware and wishes to make more specialized use of a
+radio's features. The `AnalogTuner`, `DigitalTuner`, and `ScanningTuner`
+interfaces of REDHAWK's FRONTEND module are for this purpose.  These
+applications must still use the `allocateCapacity` interface like the first
+CONOP, but now require an additional port to interface to the radio hardware.
 
-The major benefit of this approach is that an application with no knowledge of
-radio hardware can be integrated into any REDHAWK system through simple text
-modifications to it's SAD file.  No other integration effort is required other than
-to add a `usesdevice` relationship with a `frontend_tuner_allocation_struct`
-property (in the simplest case).
+The major benefit of this two CONOP approach is that an application with no
+knowledge of radio hardware can be integrated into any REDHAWK system through
+simple text modifications to it's SAD file.  No other integration effort is
+required other than to add a `usesdevice` relationship with a
+`frontend_tuner_allocation_struct` property (in the simplest case).
 
 For the sake of developing a grammar to aid discussion of this topic we will
 adopt the following:
@@ -35,9 +33,9 @@ adopt the following:
   to implement a FrontendTuner port to accomplish specific control of the radio
   device beyond just allocation and deallocation.
 
-## Current FRONTEND Tuner Data Structures
-### Allocation Structures
-#### Control Allocation
+# Current FRONTEND Tuner Data Structures
+## Allocation Structures
+### Control Allocation
 The `frontend_tuner_allocation_struct` is shown below.
 ```C++
     struct frontend_tuner_allocation_struct {
@@ -56,8 +54,12 @@ The `frontend_tuner_allocation_struct` is shown below.
     };
 ```
 
-##### tuner_type
-The `tuner_type` is a string instead of an enumerated type because although there are a common set of types, shown below, it is possible for sensor developer to create new types.  New types should continue to use FEI-compliant interfaces and define the expected behavior of those interfaces when applied to the custom tuner type.
+#### tuner_type
+The `tuner_type` is a string instead of an enumerated type because although
+there are a common set of types, shown below, it is possible for sensor
+developer to create new types.  New types should continue to use FEI-compliant
+interfaces and define the expected behavior of those interfaces when applied to
+the custom tuner type.
 
 | **Tuner Type**  | **Definition** |
 | :---------------------------| :----------------------------|
@@ -69,14 +71,22 @@ The `tuner_type` is a string instead of an enumerated type because although ther
 | RX_DIGITIZER_CHANNELIZER | "The RX_DIGITIZER_CHANNELIZER tuner is a combination of an RX_DIGITIZER and CHANNELIZER capability into a single tuner type. Input is through an analog-RF input port, and output is through DDC tuners." |
 | RX_SCANNER_DIGITIZER | An RX_DIGITIZER tuner with enhanced scanning control. |
 
-##### allocation_id
-The `allocation_id` acts as a *handle* for the allocated tuner.  All `AnalogTuner`, `DigitalTuner`, and `ScanningTuner` methods will require this handle to know which tuner the action is to be applied to and whether the caller has *control* privileges to execute the action.
+#### allocation_id
+The `allocation_id` acts as a *handle* for the allocated tuner.  All
+`AnalogTuner`, `DigitalTuner`, and `ScanningTuner` methods will require this
+handle to know which tuner the action is to be applied to and whether the caller
+has *control* privileges to execute the action.
 
-##### Optional Properties
+#### Optional Properties
 The `frontend_tuner_allocation_struct` does not allow for optional properties.
 
-#### Listener Allocation
-A *listener* allocation is used when no control over the tuner is required.  This is often the case when there is **system** level resource management.  A privileged system service performs all the control allocations and then individual processing waveforms get listener allocations.  Because a *listener* is not able to control the tuner, the allocation structure is greatly simplified.
+### Listener Allocation
+A *listener* allocation is used when no control over the tuner is required.
+This is often the case when there is **system** level resource management.  A
+privileged system service performs all the control allocations and then
+individual processing waveforms get listener allocations.  Because a *listener*
+is not able to control the tuner, the allocation structure is greatly
+simplified.
 ```C++
   struct frontend_listener_allocation_struct {
 
@@ -86,15 +96,28 @@ A *listener* allocation is used when no control over the tuner is required.  Thi
         static std::string getId() { return std::string("FRONTEND::listener_allocation"); }
     };
 ```
-The `existing_allocation_id` should be the controlling allocation id.  The `listener_allocation_id` can then be handed to processing waveforms without fear of their misusing the *system* level tuner resource.
+The `existing_allocation_id` should be the controlling allocation id.  The
+`listener_allocation_id` can then be handed to processing waveforms without fear
+of their misusing the *system* level tuner resource.
 
-## Existing BULKIO
+_**Note :** listener allocations are one potential way to have multiple streams
+be associated with a single tuner as in the case of multiple components trying
+to push data to a single transmitter._
 
-The existing BULKIO (and BURSTIO) APIs are identified and discussed in the context
-of how they may or may not support transmit CONOPs.
+# Existing BULKIO
 
-### API : `pushPacket`
-```C++
+The existing BULKIO (and BURSTIO) APIs are identified and discussed in the
+context of how they may or may not support transmit CONOPs.  We begin with a
+discussion of the low level BULKIO interfaces that are implemented in IDL;
+`pushPacket()` and `pushSRI()`.
+
+The REDHAWK Core Framework team recommends that developer's not use the
+low-level IDL interface but employ the _streamAPI_ instead.  This API consists
+largely of the `InputStream` and `OutputStream`.  Since we are primarily
+interested in transmit, we will only review the `OutputStream`.
+
+## API : `pushPacket`
+```ruby
     interface dataShort : ProvidesPortStatisticsProvider, updateSRI {
         void pushPacket(in PortTypes::ShortSequence data,
                         in PrecisionUTCTime T,
@@ -108,13 +131,24 @@ The `pushPacket` functionality has been mapped onto a _stream_ since the REDHAWK
 `EOS` is sent when `close()` is called on the stream.  The `write()` method of a
 stream takes the data buffer to be sent and the timestamp to send the data at.
 
-##### Observations : `pushPacket`
-* The `PrecisionUTCTime` attibute allows the data to be _scheduled_ at a precise instant in time.
-* The 'EOS' flag is not really useful for the _start-of-burst_ and _end-of-burst_ functionality that would be required for a device to comprehend _buffer overrun_ and _buffer underrun_ because there is no way to push an EOS through the stream without just closing the stream.
-* The `streamID` correlates directly to a `StreamSRI` supplied by a `pushSRI` call, which comes from the `updateSRI` inherited interface of the port.
+### Observations : `pushPacket`
 
-#### API : `updateSRI`
-```C++
+* The `PrecisionUTCTime` attibute allows the data to be _scheduled_ at a precise
+  instant in time.
+
+* A `PrecisionUTCTime` attribute equal to "0" should indicate that the data is
+  to be sent immediately with no delay.  The timestamp is not relevant.
+
+* The `EOS` flag is not really useful for the _start-of-burst_ and
+  _end-of-burst_ functionality that would be required for a device to comprehend
+  _buffer overrun_ and _buffer underrun_ because there is no way to push an EOS
+  through the stream without just closing the stream.
+
+* The `streamID` correlates directly to a `StreamSRI` supplied by a `pushSRI`
+  call, which comes from the `updateSRI` inherited interface of the port.
+
+## API : `updateSRI`
+```ruby
     interface updateSRI {
         // List of all active streamSRIs (that have not been ended)
         readonly attribute StreamSRISequence activeSRIs;
@@ -123,12 +157,12 @@ stream takes the data buffer to be sent and the timestamp to send the data at.
     };
 ```
 
-#### Observations : `updateSRI`
-* Th
-* The `StreamSRI` contains a structure of data about the data to be pushed the `pushPacket` interface.
+### Observations : `updateSRI`
+* The `StreamSRI` contains a structure of information about the data to be
+  pushed through the `pushPacket` interface.
 
 
-### API : `StreamSRI`
+## API : `StreamSRI`
 ```C++
     struct StreamSRI {
         long hversion;    /* version of the StreamSRI header */
@@ -146,15 +180,20 @@ stream takes the data buffer to be sent and the timestamp to send the data at.
     };
 
     typedef sequence<StreamSRI> StreamSRISequence;
+
 ```
 
-#### Observations : `StreamSRI`
+### Observations : `StreamSRI`
+  * `StreamSRI` can be extended with keywords.  Some keywords can be made part of
+    a specification in order to facilitate radio device control or other logic
+    relevant to the implementation of an FEI transmit API.
 
 
-### BULKIO Error Codes and Exceptions
-There are no BULKIO error codes and excpetions.  They all get swallowed by the core
-framework.  How then does a user know when the `stream.write()` or `pushPacket() call
-is working or not?
+## BULKIO Error Codes and Exceptions
+There are no BULKIO error codes and excpetions.  They all get swallowed by the
+core framework.  While the code block below is demonstrating how the
+`pushPacket()` call works, `stream.write()` uses the same method and suffers the
+same lack of results response.
 
 ```C++
   void OutPort<PortType>::_sendPacket(
@@ -185,38 +224,41 @@ is working or not?
   }
 ```
 
-# THIS IS OLD GARBAGE THAT NEEDS TO BE CLEANED UP
-## TunerControl Extensions
-```C++
-   struct TxOperation {
-     std::string existing_allocation_id;         // a tuner or group of tuners already allocated to this id.
-     BULKIO::PrecisionUTCTime action_timestamp;  // when this action is required to occur
-   }
-```
+## API : `OutputStream`
 
-#### action_timestamp
-The `action_timestamp` is a high precision timestamp indicating when this TxOperation must be accomplished.  It is the devices responsibility to create an error code or exception if the action cannot be accomplished at the exact time specified in this
+_Streams_ are ultimately an encapsulation of the `pushPacket` and `pushSRI` APIs
+that enforces behavior for simplified development.  There are some important
+concepts associated with streams that are overviewed below.
 
-### TxOperations
-A sequence of TxOperations that can be sent to a transmitter device.
-* Can these actions be for different allocated tuners or tuner groups?
-* Should the allocation id be pulled out into something more like
-```C++
-  schedule_operations( allocation_id, TX|RX, Operations)
+* Each stream is associated with a `streamID`.  The `streamID` uniquely
+  identifies the SRI and the data.
 
-  // Operations : TxOperations or RxOperations
-```
+* In most REDHAWK systems, the `streamID` must be equal to the `allocation_id`
+  or `listener_allocation_id` used during allocation so that the device knows to
+  associate a stream with a tuner.
 
-# General Observations
-## UHD Model
-The UHD separates control of the RF characteristics of a tuner from the data *stream*.
+* A stream is expected to be a contiguous block of data.  This will have
+  implications on the proposed approach to providing a transmit API since the
+  REDHAWK program recommends managing each _burst_ or _block_ of data as a
+  unique stream.
 
-```C++
-    uhd::tx_metadata_t md;
-    md.start_of_burst = false;
-    md.end_of_burst = false;
-    md.has_time_spec = true;
-    md.time_spec = uhd::time_spec_t(seconds_in_future);
+* A stream will only send SRI updates at the time a `stream.write()` is called.
+  This means that a device will always receive any SRI updates just prior to the
+  data that it describes.
 
-```
-This brings up an interesting concept.  What if we created a tx_metadata property that could be pushed to a device using the *keywords* field in `BULKIO::StreamSRI`.  Any device that had a transmit conop could use either a property structure or a set of namespaced properties to communicate
+* A stream will only send the `EOS` flag when it is closed.  Once an `EOS` is
+  sent, the stream cannot be used an longer.
+
+# Connection Logic
+Historically, the `allocation_id` or `listener_allocation_id` is provided to the
+component wishing to connect to a device during the connection process as the
+`connectionId`.  This allows the 'uses' port to use the `connectionId` as the
+'streamID' for its SRI.  In this way, when the component begins to send SRI and
+data, the device is able to correlate the `streamID` to whichever tuner was
+allocated for this data.  This is particular necessary for multi-input ports on
+FEI devices.  Every component sending data to the device uses a single port.
+Some mapping is required to direct data from a particular connection to the
+correct tuner or tuners.
+
+**This use-case will no longer work for the proposed transmit CONOPs and changes
+will be proposed.**
