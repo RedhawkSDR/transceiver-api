@@ -1,19 +1,18 @@
 
-Why isn't this making a table
+---
+title: "FEI Modifications"
+weight: 30
+---
+
 # Table of Contents
+| [Objective](#objective)
+| [Design Goals](#design-goals)
+| [Proposed Modifications](#proposed-modifications)
+| [Gaps](#gaps)
 
-
-
-| header | footer |
-| header field | footer field |
-
-| [Objective](#objective) |
-| [Design Goals](#design-goals) |
-| [Proposed Modifications](#proposed-modifications) |
-| [Objective](#objective) |
-| [Objective](#objective) |
-| [Objective](#objective) |
-
+| Proposed Modifications TOC|
+|: |
+| [Modify the IDL Definition of `StreamSRI`](#modify-the-idl-definition-of-streamsri)   |
 
 # Objective
 This file is intended to capture a draft proposal for changes to the REDHAWK
