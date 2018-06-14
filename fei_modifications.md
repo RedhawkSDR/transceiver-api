@@ -13,6 +13,7 @@ Title: "FEI Modifications"
 | [Transmit Status / Error Reporting](#transmit-status-error-reporting) |
 | [Allocation for Multi-channel Transmit (or Receive)](#allocation-for-multi-channel-transmit-or-receive)  |
 | [Add referenceSettlingTime to frontend_tuner_status Definition](#add-referencesettlingtime-to-frontend_tuner_status-definition)   |
+| [Radio Control Using StreamSRI Keywords](#radio-control-using-streamsri-keywords)   |
 
 # Objective
 This file is intended to capture a draft proposal for changes to the REDHAWK
@@ -442,7 +443,7 @@ _**Question**:  Does this not beg the question whether we should have a flag to
 indicate whether all settling times have been accomplished and the devices PLLs
 are _locked_?_
 
-## Radio Control Using StreamSRI Keywords.
+## Radio Control Using StreamSRI Keywords
 There are two ways to control the _radio_ portion of an FEI device.  In this
 case the _radio_ portion is defined as the following collection of settings for
 each tuner:
