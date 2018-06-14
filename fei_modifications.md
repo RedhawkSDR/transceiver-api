@@ -12,7 +12,9 @@ weight: 30
 
 | Proposed Modifications TOC|
 |: |
-| [Modify the IDL Definition of `StreamSRI`](#modify-the-idl-definition-of-streamsri)   |
+| [Provide allocation_id or connection_id in StreamSRI](#provide-allocation_id-or-connection_id-in-streamsri) |
+| [Transmit Status / Error Reporting](#transmit-status-error-reporting) |
+|   |
 
 # Objective
 This file is intended to capture a draft proposal for changes to the REDHAWK
@@ -347,10 +349,7 @@ struct FrontendDeviceStatusCustomEventType {
 * Custom port type that an application or system service would have to implement
 * in order to make use of.
 
-
-# Allocation
-
-## Multi-channel Transmit (or Receive)
+## Allocation for Multi-channel Transmit (or Receive)
 There are several scenarios that suggest that a _multi-channnel_ allocation
 should be supported
 
@@ -360,7 +359,7 @@ should be supported
 | Rx Beamforming       | A receive CONOP that requires the allocation of _N_ coherent tuners that are able to receive data on the same frequency.  Summary: 1 allocation, _N_ `bulkio` channels each with time stamp and metadata information for the respective channels    |
 | UHD-like  | The UHD library supports n-channel transmit.  We have been asked to create a Tx ability on par with the UHD. |
 
-### The Multi-Channel Allocation
+### Proposal 1 : Multi-Channel Allocation
 It is trivial to extend the `frontend_tuner_allocation_struct` with an _overall_
 allocation id and a sequence of standard `frontend_tuner_allocation_struct`
 properties.  This would create a third type of allocation structure as proposed
@@ -386,7 +385,6 @@ member to **true** and provide a   valid `allocation_id`.  Each member of the
 array can use its `allocation_id` to get status and provide any custom
 configuration of _array weights_ (or other element specific configuration).
 
-#### Multi-Channel Allocation CONOPs.
 There are really only two allocation use-cases for an array.
 1.  Use the `frontend_array_allocation_struct` with `rf_flow_id` empty in each
 of the `array_tuners`.  This should cause the device to allocate any two
@@ -403,7 +401,8 @@ canse the device should return exactly the tuners requested if they are able to
 be allocated.
 
 
-## Extensions to the frontend_status_struct
+## Add referenceSettlingTime to frontend_tuner_status Definition 
+
 In order to provide more insight into whether the device will be able to push
 data at a particular time, it is recommended that the `frontend_tuner_status`
 structure be extended with
@@ -440,4 +439,6 @@ today for telling the hardware what the beginning of transmission and the end of
 a transmission is.  As such, there is no way for the hardware to report "buffer
 underrun" or "buffer overrun" type errors.
 
-One mechanism for doing
+The Core Framework team recommends that the lifecycle of a _stream_ be used to
+indicate when a data block starts and when it ends.  This requires a new stream
+instance, and unique `streamID` for each burst.
