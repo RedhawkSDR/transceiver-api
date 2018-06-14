@@ -14,7 +14,7 @@ Title: "FEI Modifications"
 | [Allocation for Multi-channel Transmit (or Receive)](#allocation-for-multi-channel-transmit-or-receive) |
 | [Add referenceSettlingTime to frontend_tuner_status Definition](#add-referencesettlingtime-to-frontend_tuner_status-definition) |
 | [Radio Control Using StreamSRI Keywords](#radio-control-using-streamsri-keywords) |
-| [Extend `DigitalTuner` Interface to Support Transmit Queue]()   |
+| [Extend `DigitalTuner` Interface to Support Transmit Queue](#extend-digitaltuner-interface-to-support-transmit-queue)   |
 
 # Objective
 This file is intended to capture a draft proposal for changes to the REDHAWK
