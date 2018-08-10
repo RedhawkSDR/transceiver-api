@@ -10,6 +10,14 @@ Transactions may be queued in advance to ensure synchronicity and data continuit
 
 A transaction is represented by a single BulkIO stream.
 
+## Identifier
+
+A transaction is uniquely identified within the tuner's queue by the BulkIO stream `streamID`.
+
+It follows that there may not be more than one transaction in the queue with the same `streamID` at any point in time; therefore, the device shall reject a duplicate `streamID`.
+
+It is legal to reuse the same `streamID` at a later date, once the prior transaction has completed.
+
 ## Start
 
 A new transaction is created when the device receives a new StreamSRI and the first data packet for that stream.
@@ -87,13 +95,16 @@ Manual mode uses a (presumably CONOP-specific) component to mediate transactions
 This mode is enabled when the StreamSRI contains an `FRONTEND::tuner_allocation` keyword.
 The keyword must contain an `allocation_id` field which supersedes the connection ID for matching a BulkIO stream to an allocation.
 
-## Device Queue
+## Tuner Queue
+
+Each tuner in the device maintains its own queue of transactions.
+The queue is visible externally via the QueuedDevice IDL.
 
 When a transaction is created, the device validates the transaction, including the start time and the tuner configuration.
 If the transaction is not valid, it is rejected and an error notification is produced (TBD, see device status).
-If the transaction is valid, it is added to the device's queue.
+If the transaction is valid, it is added to the tuner's queue.
 
-The device queue is a list of transactions sorted in order of start time, ascending.
+The tuner queue is a list of transactions sorted in order of start time, ascending.
 
 A transaction remains in the queue until it is completed or cancelled.
 
@@ -108,6 +119,7 @@ However, more sophisticated devices may be able to do some form of multiplexing.
 A queued transaction becomes "active" when the device begins to act upon it (e.g., starts transmitting).
 This must be no later than the transaction's start time, `t0`.
 If the transaction includes tuner control, this may occur prior to `t0` in order to account for settling time.
+
 _**Question**:  Does this warrant status notification?
 
 ### Underflow/Overflow Handling
@@ -121,6 +133,7 @@ However, an application that is more tolerant of error may prefer to keep transm
 ### Completion
 
 An active transaction is complete when all of the data for the transaction has been transmitted.
+
 _**Question**:  Does this warrant status notification?
 
 ### Priority
@@ -130,10 +143,10 @@ Higher priorty transactions may preempt lower priority transactions.
 
 ### Cancellation
 
-When a transaction is cancelled, it is removed from the device's queue and will not be acted upon.
+When a transaction is cancelled, it is removed from the tuner's queue and will not be acted upon.
 If the transaction is still open, all further data from the stream will be discarded upon receipt.
 
-Cancellation may be requested for a transaction in the device's queue, including active transactions.
+Cancellation may be requested for a transaction in the tuner's queue, including active transactions.
 The device is free to reject a cancellation request if it cannot be completed, such as when the transaction's sample data has already been transferred to a device's FPGA fabric but not transmitted yet.
 Transactions are also cancelled when they are preempted by a higher priority transaction.
 
