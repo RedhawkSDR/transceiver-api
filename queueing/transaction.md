@@ -120,21 +120,50 @@ A queued transaction becomes "active" when the device begins to act upon it (e.g
 This must be no later than the transaction's start time, `t0`.
 If the transaction includes tuner control, this may occur prior to `t0` in order to account for settling time.
 
-_**Question**:  Does this warrant status notification?
+_**Question**:  Does this warrant status notification?_
 
-### Underflow/Overflow Handling
+### Underflow
 
-TBD.
+Underflow occurs when there is an active transaction and the device's buffer becomes empty.
+This may occur between the REDHAWK device layer and the device driver, or between the device driver and the hardware.
+REDHAWK does not define how to manage the latter "internal" underflow, as it is device-specific.
+Device implementers may choose to provide further control; however, this limits portability.
 
-Part of the tuner configuration could be how to handle underflow/overflow.
 If an application is sensitive to exact timing and/or data continuity, it may choose to have the transaction cancelled.
 However, an application that is more tolerant of error may prefer to keep transmitting.
+
+An optional field, `underflow_policy`, will be added to the `FRONTEND::tuner_allocation` struct.
+The type is `short` and it has two enumerated values:
+
+| Value | Label    |
+| ----- | -------- |
+| 0     | CONTINUE |
+| 1     | CANCEL   |
+
+An `underflow_policy` of `CONTINUE` indicates that the device should continue transmitting when new data becomes available for the transaction.
+If timestamps are being used to indicate further timing control, they should be interpreted as though the device were not in an underflow state.
+
+An `underflow_policy` of `CANCEL` immediately cancels the transaction when the device enters an underflow state.
+Further data received for that transaction is discarded.
+
+The `underflow_policy` value may be set in the StreamSRI `FRONTEND::tuner_allocation` keyword, or as part of the `allocateCapacity()` call.
+If `underflow_policy` is not specified, it is left to the device to determine its default policy.
+REDHAWK recommends a default policy of `CONTINUE`.
+
+### Overflow
+
+In a transmit scenario, overflow should only be possible when the BulkIO queue flushes.
+If the queue has flushed, there is data being sent to the port much faster than it is being read.
+This would probably indicate a system managment problem, as the device is being overtasked.
+
+For consistency, an optional field `overflow_policy` will be added to the `FRONTEND::tuner_allocation` struct.
+It has the same type and meaning as `underflow_policy`.
 
 ### Completion
 
 An active transaction is complete when all of the data for the transaction has been transmitted.
 
-_**Question**:  Does this warrant status notification?
+_**Question**:  Does this warrant status notification?_
 
 ### Priority
 
