@@ -1,0 +1,83 @@
+#ifndef _FRONTEND_QUEUEDTRANSMITTER_IDL_
+#define _FRONTEND_QUEUEDTRANSMITTER_IDL_
+
+#include "redhawk/FRONTEND/TunerControl.idl" 
+
+// Notes:
+// 1. Is the queue management useful outside of Tx? A *lot* of the scanner API
+//    might be usable through this API.
+// 2. Is there value in being able to add a TunerAction via the IDL? Maybe not,
+//    depends on interpretation of streamID?
+// 3. What happens to data if a TunerAction is canceled?
+// 4. If the BulkIO SRI does not include a tuner allocation keyword, is a
+//    TunerAction created?
+//    - Yes, if we're providing visibility into what is *currently* happening.
+// 5. streamID in TunerAction was same as transactionId in cancelTunerAction;
+//    made it consistent.
+// 6. I went with CF::Properties for the tuner configuration, because not all
+//    of the well-known fields may be specified (e.g., only changing center
+//    frequency). Of course, this raises the question of how to handle that
+//    case, because the unspecified values can change between the time the
+//    transaction was queued and the time it is executed.
+// 7. I presume "additional_properties" can be anything, hence it is not just
+//    tacked onto the FRONTEND::tuner_status in "tuner_alloc_struct".
+// 8. Renamed "transmit_time" to "start_time" (see below)
+// 9. General note, FRONTEND IDL uses underscores in structs, CF IDL *almost*
+//    always mixed-case.
+
+namespace FRONTEND {
+    interface QueuedTuner : DigitalTuner
+    {
+        struct TunerAction {
+            // The time at which this action should take effect. In the case
+            // of transmit, this is when the first sample should be sent over
+            // the air, and any tuner configuration should have been effected
+            // (accouting for settling time). For receive (i.e., scanner), it
+            // should be interpreted the same as that "start_time".
+            BULKIO::PrecisionUTCTime start_time;
+
+            // TODO: Should this be equal to the streamID, or should we have
+            //       another field for streamID (or neither)?
+            //       - If transaction and stream IDs are the same, how do we
+            //         handle the case of a repeated streamID (i.e., sender
+            //         closed stream, then created a new one with same ID)?
+            //       - If different (e.g., device generates transaction ID),
+            //         how to reconcile stream and transaction IDs?
+            string transaction_id;
+
+            // Optional priority setting to allow preemption of transactions
+            // by one with a higher priority.
+            // TODO: Define priority range (e.g., [-20, 20]) and default
+            //       value (0?)
+            short priority;
+
+            // Indicates whether transaction is currently being acted upon; in
+            // the case of transmit, it's sending the queued data and has not
+            // hit end-of-stream. If receive is supported, would this only be
+            // the case during the settling time following a reconfiguration
+            // (during which no data is being produced)?
+            boolean active;
+
+            CF::Properties tuner_alloc_struct;
+            CF::Properties additional_properties;
+            // TODO: Tuner status (underflow, overflow)
+            // TODO: Queue status?
+            // TODO: Sample position?
+        };
+
+        // TODO: API to create a tuner action? Right now, transmit transactions
+        //       are only implicitly created by a new BulkIO stream
+
+        /** Get the currently queued actions associated with the allocation id*/
+        // TODO: Actions in order sorted by time, with active (if any) as the
+        //       0th element?
+        typedef sequence <TunerAction> TunerActions;
+        TunerActions getTunerActions(in string id)
+          raises (FrontendException, BadParameterException);
+
+        /** Cancel a queued transaction */
+        void cancelTunerAction(in string id, in string transactionId)
+          raises (FrontendException, BadParameterException);
+    };
+};
+#endif
