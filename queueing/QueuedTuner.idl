@@ -25,7 +25,7 @@
 // 9. General note, FRONTEND IDL uses underscores in structs, CF IDL *almost*
 //    always mixed-case.
 
-namespace FRONTEND {
+module FRONTEND {
     interface QueuedTuner : DigitalTuner
     {
         struct TunerAction {
