@@ -1,0 +1,73 @@
+#ifndef _FRONTEND_DEVICESTATUS_IDL_
+#define _FRONTEND_DEVICESTATUS_IDL_
+
+#include "redhawk/FRONTEND/Frontend.idl" 
+
+module FRONTEND {
+
+    enum QueueActionType {
+        QUEUE_ADDED,
+        QUEUE_STARTED,
+        QUEUE_FINISHED,
+        QUEUE_CANCELLED,
+        QUEUE_REJECTED
+    };
+
+    struct DeviceQueueStatus {
+        string          transaction_id;
+        QueueActionType queue_action;
+        string          message;
+    };
+
+    // NB: Enumeration labels in IDL cannot be given explicit values. To
+    // prevent breakage, either new labels must be added after the last label,
+    // or reserved labels must be defined for later use.
+    enum ErrorCodeType {
+        ERROR_UNDERFLOW,
+        ERROR_OVERFLOW,
+        ERROR_TIMESTAMP,
+        ERROR_CUSTOM
+    };
+
+    struct DeviceErrorStatus {
+        ErrorCodeType  error_code;
+        CF::Properties error_props;
+    };
+
+    struct DeviceCustomStatus {
+        string         custom_type;
+        CF::Properties custom_props;
+    };
+
+    // See above re: extending enumerations
+    enum DeviceStatusEnumType {
+        EVENT_QUEUE,
+        EVENT_ERROR,
+        EVENT_CUSTOM
+    };
+
+    union DeviceStatusType switch(DeviceStatusEnumType) {
+    case EVENT_QUEUE:
+        DeviceQueueStatus queue;
+    case EVENT_ERROR:
+        DeviceErrorStatus error;
+    case EVENT_CUSTOM:
+        // NB: The identifier "custom" is a reserved keyword in IDL
+        DeviceCustomStatus custom_status;
+    };
+
+    struct DeviceStatusEvent {
+        string           device_id;
+        string           allocation_id;
+        CF::UTCTime      timestamp;
+        DeviceStatusType status;
+    };
+
+    // In practice, this interface should inherit from the back-traceable
+    // ProvidesPort interface.
+    interface DeviceStatus {
+        void deviceStatusChanged(in DeviceStatusEvent event);
+    };
+};
+
+#endif
