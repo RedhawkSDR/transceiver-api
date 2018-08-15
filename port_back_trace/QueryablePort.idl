@@ -27,40 +27,35 @@
 
 module ExtendedCF {
 
+    // NB: The name "UsesConnection" is a little misleading now, but changing
+    // it could break user code. We could use a typedef, but due to the lack of
+    // typedefs in Java, no code is generated for aliases. This means either:
+    // * Rename struct, typedef to UsesConnection: Java code that is currently
+    //   using UsesConnection breaks.
+    // * Typedef UsesConnection to new name: Java code cannot use the alias.
     struct UsesConnection {
         string connectionId;
         Object port;
-        Object providesParent;
-        Object usesParent;
-    };
-
-    struct PortReference {
-        string connectionId;
-        Object usesPort;
-        Object usesParent;
-        Object providesParent;
     };
 
     typedef sequence<UsesConnection> UsesConnectionSequence;
 
-    typedef sequence<PortReference> PortReferenceSequence;
-
-    // The QueryablePort interface extends the standard CF::Port so that
-    // the list of current connections can be queried.
-    interface QueryablePort : CF::Port {
+    // Mix-in class for both uses and provides ports that allows inspection of
+    // the parent object and the known connections.
+    interface InspectablePort {
+        readonly attribute CF::PortSupplier parent;
         readonly attribute UsesConnectionSequence connections;
     };
 
-    interface UsesPort : QueryablePort {
-        void disconnect (in string connectionId) raises (CF::Port::InvalidPort);
-        void connect (in Object providesPort, in Object providesParent, in Object usesParent, in string connectionId)
-            raises (CF::Port::InvalidPort, CF::Port::InvalidConnectionId);
+    // The QueryablePort interface extends the standard CF::Port so that
+    // the list of current connections can be queried.
+    interface QueryablePort : CF::Port, InspectablePort {
     };
-    interface ProvidesPort {
-        readonly attribute PortReferenceSequence references;
+
+    interface ProvidesPort : InspectablePort {
         void refreshReferences ();
-        void removeReference (in string connectionId) raises (CF::Port::InvalidPort);
-        void establishReference (in Object usesPort, in Object usesParent, in Object providesParent, in string connectionId)
+        void removeConnection (in string connectionId) raises (CF::Port::InvalidPort);
+        void addConnection (in Object usesPort, in string connectionId)
             raises (CF::Port::InvalidPort, CF::Port::InvalidConnectionId);
     };
 };
