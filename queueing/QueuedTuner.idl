@@ -9,25 +9,28 @@
 // 2. Is there value in being able to add a TunerAction via the IDL? Maybe not,
 //    depends on interpretation of streamID?
 // 3. What happens to data if a TunerAction is canceled?
+//    - Discard data until an EOS is received. The status is QUEUE_CANCELED
+//      until the EOS is processed.
 // 4. If the BulkIO SRI does not include a tuner allocation keyword, is a
 //    TunerAction created?
 //    - Yes, if we're providing visibility into what is *currently* happening.
-// 5. streamID in TunerAction was same as transactionId in cancelTunerAction;
-//    made it consistent.
-// 6. I went with CF::Properties for the tuner configuration, because not all
+// 5. I went with CF::Properties for the tuner configuration, because not all
 //    of the well-known fields may be specified (e.g., only changing center
 //    frequency). Of course, this raises the question of how to handle that
 //    case, because the unspecified values can change between the time the
 //    transaction was queued and the time it is executed.
-// 7. I presume "additional_properties" can be anything, hence it is not just
+// 6. I presume "additional_properties" can be anything, hence it is not just
 //    tacked onto the FRONTEND::tuner_status in "tuner_alloc_struct".
-// 8. Renamed "transmit_time" to "start_time" (see below)
-// 9. General note, FRONTEND IDL uses underscores in structs, CF IDL *almost*
-//    always mixed-case.
 
 module FRONTEND {
     interface QueuedTuner : DigitalTuner
     {
+        enum QueueStatusType {
+            QUEUE_PENDING,
+            QUEUE_ACTIVE,
+            QUEUE_CANCELED
+        };
+
         struct TunerAction {
             // The time at which this action should take effect. In the case
             // of transmit, this is when the first sample should be sent over
@@ -36,13 +39,9 @@ module FRONTEND {
             // should be interpreted the same as that "start_time".
             BULKIO::PrecisionUTCTime start_time;
 
-            // TODO: Should this be equal to the streamID, or should we have
-            //       another field for streamID (or neither)?
-            //       - If transaction and stream IDs are the same, how do we
-            //         handle the case of a repeated streamID (i.e., sender
-            //         closed stream, then created a new one with same ID)?
-            //       - If different (e.g., device generates transaction ID),
-            //         how to reconcile stream and transaction IDs?
+            // Unique identifier for this transaction within the current tuner
+            // queue. In the case of a transaction with associated data, the
+            // transaction ID and streamID must be the same.
             string transaction_id;
 
             // Optional priority setting to allow preemption of transactions
@@ -58,11 +57,29 @@ module FRONTEND {
             // (during which no data is being produced)?
             boolean active;
 
+            // The FRONTEND::tuner_allocation properties that are required for
+            // this transaction. This allows atomic reconfiguration of a tuner
+            // at a precise point-in-time.
             CF::Properties tuner_alloc_struct;
+
+            // Other properties required for this transaction to allow device-
+            // specific settings.
+            // TODO: Is this an allocation? A configuration?
             CF::Properties additional_properties;
-            // TODO: Tuner status (underflow, overflow)
-            // TODO: Queue status?
-            // TODO: Sample position?
+
+            // Indicates the current state of this TunerAction with regard to
+            // the queue:
+            //   QUEUE_PENDING  - Scheduled but has not started
+            //   QUEUE_ACTIVE   - Currently being acted upon (e.g., tuner is
+            //                    transmitting data)
+            //   QUEUE_CANCELED - No further action will be taken, but in the
+            //                    case of transmit, no EOS has been received
+            //                    for the assocated streamID
+            QueueStatusType queue_status;
+
+            // TODO: Other status information?
+            //   * Tuner status (underflow, overflow)?
+            //   * Sample position and buffer status?
         };
 
         // TODO: API to create a tuner action? Right now, transmit transactions
