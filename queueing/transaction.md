@@ -10,6 +10,10 @@ Transactions may be queued in advance to ensure synchronicity and data continuit
 
 A transaction is represented by a single BulkIO stream.
 
+## Flowchart
+
+![transaction flow](transaction_flowchart.png)
+
 ## Identifier
 
 A transaction is uniquely identified within the tuner's queue by the BulkIO stream `streamID`.
