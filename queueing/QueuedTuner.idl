@@ -28,6 +28,7 @@ module FRONTEND {
         enum QueueStatusType {
             QUEUE_PENDING,
             QUEUE_ACTIVE,
+            QUEUE_UNDERFLOW,
             QUEUE_CANCELED
         };
 
@@ -50,13 +51,6 @@ module FRONTEND {
             //       value (0?)
             short priority;
 
-            // Indicates whether transaction is currently being acted upon; in
-            // the case of transmit, it's sending the queued data and has not
-            // hit end-of-stream. If receive is supported, would this only be
-            // the case during the settling time following a reconfiguration
-            // (during which no data is being produced)?
-            boolean active;
-
             // The FRONTEND::tuner_allocation properties that are required for
             // this transaction. This allows atomic reconfiguration of a tuner
             // at a precise point-in-time.
@@ -69,17 +63,32 @@ module FRONTEND {
 
             // Indicates the current state of this TunerAction with regard to
             // the queue:
-            //   QUEUE_PENDING  - Scheduled but has not started
-            //   QUEUE_ACTIVE   - Currently being acted upon (e.g., tuner is
-            //                    transmitting data)
-            //   QUEUE_CANCELED - No further action will be taken, but in the
-            //                    case of transmit, no EOS has been received
-            //                    for the assocated streamID
+            //   QUEUE_PENDING   - Scheduled but has not started
+            //   QUEUE_ACTIVE    - Currently being acted upon (e.g., tuner is
+            //                     transmitting data); have not reached EOS.
+            //                     In receive case, this could either indicate
+            //                     that it's within the settling time window,
+            //                     or that it's producing data.
+            //   QUEUE_UNDERFLOW - Active, but device has entered an underflow
+            //                     state and is awaiting data
+            //   QUEUE_OVERFLOW  - TBD: is this a "state" or just an "event"?
+            //   QUEUE_CANCELED  - No further action will be taken, but in the
+            //                     case of transmit, no EOS has been received
+            //                     for the assocated streamID
             QueueStatusType queue_status;
 
-            // TODO: Other status information?
-            //   * Tuner status (underflow, overflow)?
-            //   * Sample position and buffer status?
+            // Size, in bytes, of device buffer; may be 0 if device does not
+            // provide the information.
+            unsigned long buffer_capacity;
+
+            // Number of bytes of the device buffer currently in use. If
+            // buffer_capacity is 0, this must also be 0.
+            unsigned long buffer_used;
+
+            // Number of samples that have been processed in this transaction.
+            // This provides a coarse indication of how much data has been
+            // handled but is not suitable for precise timing.
+            unsigned long long sample_position;
         };
 
         // TODO: API to create a tuner action? Right now, transmit transactions
