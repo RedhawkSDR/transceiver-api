@@ -5,20 +5,6 @@
 
 module FRONTEND {
 
-    enum QueueActionType {
-        QUEUE_ADDED,
-        QUEUE_STARTED,
-        QUEUE_FINISHED,
-        QUEUE_CANCELLED,
-        QUEUE_REJECTED
-    };
-
-    struct DeviceQueueStatus {
-        string          transaction_id;
-        QueueActionType queue_action;
-        string          message;
-    };
-
     // NB: Enumeration labels in IDL cannot be given explicit values. To
     // prevent breakage, either new labels must be added after the last label,
     // or reserved labels must be defined for later use.
@@ -29,44 +15,48 @@ module FRONTEND {
         ERROR_CUSTOM
     };
 
-    struct DeviceErrorStatus {
+    struct DeviceErrorEvent {
+        string         device_id;
+        string         allocation_id;
+        CF::UTCTime    timestamp;
         ErrorCodeType  error_code;
+        string         error_message;
         CF::Properties error_props;
     };
 
-    struct DeviceCustomStatus {
-        string         custom_type;
-        CF::Properties custom_props;
+    enum QueueActionType {
+        QUEUE_ADDED,
+        QUEUE_STARTED,
+        QUEUE_FINISHED,
+        QUEUE_CANCELLED,
+        QUEUE_REJECTED
     };
 
-    // See above re: extending enumerations
-    enum DeviceStatusEnumType {
-        EVENT_QUEUE,
-        EVENT_ERROR,
-        EVENT_CUSTOM
+    struct DeviceQueueEvent {
+        string          device_id;
+        string          allocation_id;
+        CF::UTCTime     timestamp;
+        string          transaction_id;
+        QueueActionType queue_action;
+        CF::Properties  queue_props;
     };
 
-    union DeviceStatusType switch(DeviceStatusEnumType) {
-    case EVENT_QUEUE:
-        DeviceQueueStatus queue;
-    case EVENT_ERROR:
-        DeviceErrorStatus error;
-    case EVENT_CUSTOM:
-        // NB: The identifier "custom" is a reserved keyword in IDL
-        DeviceCustomStatus custom_status;
-    };
-
+    // Generic status event, for device-specific status or other status types
+    // we did not anticipate
     struct DeviceStatusEvent {
-        string           device_id;
-        string           allocation_id;
-        CF::UTCTime      timestamp;
-        DeviceStatusType status;
+        string         device_id;
+        string         allocation_id;
+        CF::UTCTime    timestamp;
+        string         status_type;
+        CF::Properties status_props;
     };
 
     // In practice, this interface should inherit from the back-traceable
     // ProvidesPort interface.
     interface DeviceStatus {
-        void deviceStatusChanged(in DeviceStatusEvent event);
+        void deviceErrorOccurred(in DeviceErrorEvent error);
+        void deviceQueueChanged(in DeviceQueueEvent event);
+        void deviceStatusChanged(in DeviceStatusEvent status);
     };
 };
 
