@@ -29,6 +29,7 @@ module FRONTEND {
             QUEUE_PENDING,
             QUEUE_ACTIVE,
             QUEUE_UNDERFLOW,
+            QUEUE_OVERFLOW,
             QUEUE_CANCELED
         };
 
@@ -71,7 +72,8 @@ module FRONTEND {
             //                     or that it's producing data.
             //   QUEUE_UNDERFLOW - Active, but device has entered an underflow
             //                     state and is awaiting data
-            //   QUEUE_OVERFLOW  - TBD: is this a "state" or just an "event"?
+            //   QUEUE_OVERFLOW  - Active, but device has entered an overflow
+            //                     state and is discarding data
             //   QUEUE_CANCELED  - No further action will be taken, but in the
             //                     case of transmit, no EOS has been received
             //                     for the assocated streamID
