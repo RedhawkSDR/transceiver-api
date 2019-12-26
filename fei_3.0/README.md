@@ -179,8 +179,8 @@ The deallocate call is as follows:
 ```
 
 All devices that are associated with the given allocation id are deallocated.
-For example, if a phased array is allocated with n tuners and the deallocate() call is made on the parent devices, then all associated DDCs are deallocated.
-In the case of such collective allocations, the deallocate call can be made against one of the single DDC devices; in such a case, that specific DDC is deallocated, but all others remain allocated.
+For example, if a phased array is allocated with n tuners and the deallocate() call is made on the parent device, then all associated DDCs are deallocated.
+In the case of such allocations where more than one device is allocated (such as in an array), the deallocate call can be made against one of the single DDC devices to deallocate just that one device and not the others in the initial allocation.
 
 Continuing with the example transceiver in the previous section, a single allocation made to the parent device can return the allocation of a single DDC, as shown below:
 
@@ -193,9 +193,9 @@ The return value from the allocation to the parent device is the child device's 
 
 When ingesting data from coherent tuners, allocations must be coordinated between multiple independent tuners; each of these tuners is associated with a different RF receiver and a different antenna. While each of these tuners is ostensibly independent, they must all be tuned to the same frequency over the same bandwith, with data generated coherently (in lock-step) between the different tuners.
 
-The mechanism for supporting the process is a composite (aggregate) device. In this case, each tuner (DDC for FEI) is a child of a wideband receiver (RX or RX_DIGITIZER for FEI), and each wideband receiver is the child of the array device proxy (RX_ARRAY for FEI).
+The mechanism for supporting the process is a parent (aggregate) device for the array, child devices for each receiver, and the receivers each having child devices for each tuner. In this case, each tuner (DDC FEI device) is a child of a wideband receiver (RX or RX_DIGITIZER FEI device), and each wideband receiver is the child of the array device proxy (RX_ARRAY FEI device).
 
-The wideband receiver would be RX_DIGITIZER if it contains a wideband data output and RX if it does not.
+The wideband receiver is an RX_DIGITIZER if it contains a wideband data output and RX if it does not.
 An RX_DIGITIZER is a combination of RX and DDC, so a single tuner attached to a parent RX (or RX_DIGITIZER) is a DDC.
 Multiple receivers (RX or RX_DIGITIZER) can be combined into a coherent set, where the set is controlled by RX_ARRAY.
 
@@ -298,7 +298,7 @@ Deallocation requires the same properties:
 
 To allocate 2 tuners with 1kHz of bandwidth for any rf_flow_id, perform the following allocation:
 ```python
-    alloc_tuner_1=frontend.createTunerAllocation(tuner_type='RX_DIGITIZER',allocation_id='alloc_id_1', bandwidth=1000.0,returnDict=False)
+    alloc_tuner_1=frontend.createTunerAllocation(tuner_type='DDC',allocation_id='alloc_id_1', bandwidth=1000.0,returnDict=False)
     coherent_request_any_feed=CF.DataType(id='FRONTEND::coherent_feeds', value=_any.to_any(['', '']))
     allocation_response = agg_dev.allocate([alloc_tuner_1, coherent_request_any_feed])
 ```
@@ -306,7 +306,7 @@ To allocate 2 tuners with 1kHz of bandwidth for any rf_flow_id, perform the foll
 To allocate scanning tuners, all is needed is to include the scanner allocation request. For example, assuming that a scanning functionality is needed where the scanner is expected to change frequencies above 10kHz, use the following allocation:
 
 ```python
-    alloc_scanner=frontend.createScannerAllocation(min_freq=10000.0,returnDict=False) alloc_tuner_1=frontend.createTunerAllocation(tuner_type='RX_DIGITIZER',allocation_id='alloc_id_1', bandwidth=1000.0,returnDict=False)
+    alloc_scanner=frontend.createScannerAllocation(min_freq=10000.0,returnDict=False) alloc_tuner_1=frontend.createTunerAllocation(tuner_type='DDC',allocation_id='alloc_id_1', bandwidth=1000.0,returnDict=False)
     coherent_request_any_feed=CF.DataType(id='FRONTEND::coherent_feeds', value=_any.to_any(['', '']))
     allocation_response = agg_dev.allocate([alloc_tuner_1, coherent_request_any_feed])
 ```
@@ -318,7 +318,7 @@ If scanning functionality is needed, then each device's scan plan needs to be se
 A benefit of this approach is that each tuner is single-channel, that means that there is not multi-out functionality controlled by a connectionTable. The only data outputs are out of each single-channel tuner, and each of these tuners can support only a single stream. This means that no special name convention is needed for the connection id
 
 ```python
-    alloc_tuner_1=frontend.createTunerAllocation(tuner_type='RX_DIGITIZER',allocation_id='alloc_id_1', bandwidth=1000.0,returnDict=False)
+    alloc_tuner_1=frontend.createTunerAllocation(tuner_type='DDC',allocation_id='alloc_id_1', bandwidth=1000.0,returnDict=False)
     coherent_request_any_feed=CF.DataType(id='FRONTEND::coherent_feeds', value=_any.to_any(['', '']))
     allocation_response = agg_dev.allocate([alloc_tuner_1, coherent_request_any_feed])
 
@@ -332,9 +332,188 @@ A benefit of this approach is that each tuner is single-channel, that means that
 
 ## Transmit CONOP
 
+Transmit operations are performed through a digital up-converter (DUC) device.
+The DUC device may or may not be the child of a TX device.
+If a single transmit channel is supported, then the single DUC is connected to an implied TX device.
+In the case where more than one DUC is attached to a single RF transmitter, then the multiple DUC devices are children of the TX device.
 
+In the case where the device is simple, such as a single hard-wired DUC, then the entire process space can be the DUC device.
+In cases where the underlying hardware is configurable, as in the case of devices like the USRP, then a host process would scan the underlying hardware and deploy the appropriate number of DUC devices.
 
-## Developing Devices
+Transmit allocations are made as a combination of two properties: FRONTEND::tuner_allocation and FRONTEND::transmitter_allocation.
+The FRONTEND::tuner_allocation structure provides information regarding the center frequency, RF bandwidth, and/or sampling rate.
+The FRONTEND::transmitter_allocation structure provides information regarding the expected agility of the tranmission:
 
-The described rx_array, rx_digitizer, and ddc devices are custom devices that are not currently supported through REDHAWK's standard code generators in the completed array configuration.
-This functionality can be added to future versions if this pattern is deemed useful by the users.
+| ID | name | type | description
+| --- | --- | --- | ---
+| FRONTEND::transmitter_allocation::min_freq | min_freq | double | In Hz. Requested lower edge of the transmit range (-1 for ignore)
+| FRONTEND::transmitter_allocation::max_freq | max_freq | double | In Hz. Requested upper edge of the transmit range (-1 for ignore)
+| FRONTEND::transmitter_allocation::control_limit | control_limit | double | In seconds. control_limit >= sample_rate/(max_settle_time+min_dwell_time) is met before the next retune (-1 for ignore)
+| FRONTEND::transmitter_allocation::max_power | max_power | double | In Watts. max_power => transmitted burst power (-1 for ignore)
+
+As seen above, the FRONTEND::transmitter_allocation structure provides parameters for the expected agility of the transmitter; namely the minimum and maximum frequency over which transmissions may occur, the minimum effective dwell time for transmission (defined as the settling time plus the transmission time), and the maximum expected power.
+Each of these members may be set to "ignore" by passing a -1 as its value.
+
+An example allocation of a transmitter is as follows:
+
+```python
+    alloc_tuner_1=frontend.createTunerAllocation(tuner_type='DUC',allocation_id='alloc_id_1', center_frequency=1e6,returnDict=False)
+    alloc_duc_1=frontend.createTransmitAllocation(min_freq=900e3, max_freq=1.1e6, control_limit=0.1, max_power=-1,returnDict=False)
+    allocation_response = agg_dev.allocate([alloc_tuner_1, alloc_duc_1])
+```
+
+A successful allocation returns a reference to the DUC device as well as its data port, in this case an input or "provides" port, and the control port.
+
+Transmission queuing and execution is managed through BULK IO's timestamp.
+Providing a timestamp of 0 or in the past results in immediate transmission.
+Providing a timestamp in the future queues the packet for transmission when the current time matches the timestamp.
+This burst transmission process is shown below:
+
+![Transmission API](tx_burst_planning.png)
+
+As shown above, the different bursts are queued through the port's stream API, with the provided timestamp giving the transmitter transmission directions.
+BULK IO is also used when transmissions are to be sent over different frequencies.
+The re-tuning instructions are inserted as keyword CHAN_RF in SRI updates, as seen below:
+
+![Multi-Frequency Transmission API](tx_freq_hop_burst_planning.png)
+
+Note that the stream id plays no role in the basic transmit API.
+Stream id differentiation becomes important when different transmission priorities are mixed.
+To provide a stream id a particular priority, add the keyword FRONTEND::PRIORITY with value of type short with the stream's priority to the SRI keywords.
+When overlapping scheduled transmissions conflict, the transmission with the higher priority is transmitted.
+
+Feedback from the device is sent through the DUC's status port, as seen in the following figure:
+
+![Transmitter Status](tx_status.png)
+
+The DUC's status port is named "transmitDeviceStatus_out" and uses the TransmitDeviceStatus interface.
+The DeviceStatus interfaces is as follows:
+
+```idl
+    module CF {
+        enum DeviceStatusCodeType {
+            DEV_OK,                             // device operating normally
+            DEV_UNDERFLOW,                      // not enough data to fill the needed time
+            DEV_OVERFLOW,                       // hardware cannot transmit the data at the rate requested
+            DEV_INSUFFICIENT_SETTLING_TIME,     // time difference between end of last transmit and new transmit with a tune is insufficient
+            DEV_MISSED_TRANSMIT_WINDOW,         // transmit could not begin at the requested time
+            DEV_INVALID_TRANSMIT_TIME_OVERLAP,  // the timestamp for the last sample in the previous packet is after the timestamp for the first sample in the current packet
+            DEV_INVALID_HARDWARE_STATE,         // hardware state is invalid (e.g.: configuration placed hardware in an invalid state)
+            DEV_HARDWARE_FAILURE                // general hardware failure
+        };
+
+        // generic device status
+        struct DeviceStatusType {
+            string                      allocation_id;
+            CF::UTCTime                 timestamp;
+            CF::DeviceStatusCodeType    status;         // device status
+            string                      message;        // status-specific message
+            CF::Properties              props;          // status-specific properties
+        };
+
+        interface DeviceStatus {
+            // triggers for status message: change in status
+            void statusChanged(in DeviceStatusType status);
+        };
+    };
+
+    module FRONTEND {
+        struct TransmitStatusType {
+            string                      stream_id;
+            string                      allocation_id;
+            CF::UTCTime                 timestamp;
+            unsigned long long          total_samples;  // number of samples transmitted from this stream id; resets to 0 when >= max Ulonglong
+            unsigned long long          total_bursts;   // number of bursts transmitted (pushPacket calls) from this stream id; resets to 0 when >= max Ulonglong
+            boolean                     transmitting;   // true when currently transmitting, false when no queued data to transmit
+            CF::DeviceStatusCodeType    status;         // device status
+            double                      settling_time;  // this is the hardware's current re-tune settling time
+            unsigned long               queued_bursts;  // number of bursts that are yet to be transmitted (current queue size)
+        };
+
+        interface TransmitDeviceStatus : CF::DeviceStatus {
+            // triggers for status message: change in status, change in transmitting, or queued_bursts increases or becomes zero
+            void transmitStatusChanged(in TransmitStatusType status);
+        };
+    };
+```
+
+Control of the transmitter, beyond that afforded by timestamps and keywords in BULK IO, is concerned with error recovery.
+For example, in some CONOPs it may be required to have a well-defined strict schedule of transmitted bursts, while in other CONOPs, it may be acceptable for some bursts to be sent with loose timing or not at all.
+The definition of the response to error states is control through the TransmitControl interface, which in turn inherits from the DigitalTuner interface:
+
+```idl
+    interface TransmitControl : DigitalTuner {
+        struct TransmitParameters {
+            string  stream_id;          // if empty string, then applies to all streams
+            boolean ignore_timestamp;   // set to true for continuous data. Insufficient data will cause an DEV_UNDERFLOW error
+            boolean ignore_error;       // set to true to ignore error states and just transmit
+            double  tx_power;           // -1 for don't care
+            double  max_timing_error;   // how much deviation (over/under) before DEV_MISSED_TRANSMIT_WINDOW is set as the error code; -1 for don't care
+            // time for the burst transmission is the bulk io timestamp, unless ignore_timestamp is true; then data is sent as soon as it is available
+            // center frequency for the burst transmission is CHAN_RF keyword in SRI
+            // duration of the burst is the length of the packet * the sampling period (in SRI)
+        };
+
+        /* reset allocation(s):
+              - remove error codes
+              - empty the transmit queue
+              - reset total_samples count
+              - reset total_bursts count */
+        void reset()
+            raises (FRONTEND::FrontendException);
+
+        void setTransmitParameters(in TransmitParameters transmit_parameters)
+            raises (FRONTEND::FrontendException, FRONTEND::BadParameterException);
+
+        TransmitParameters getTransmitParameters()
+            raises (FRONTEND::FrontendException);
+    };
+```
+
+Note that the allocation id is not an argument for these function calls.
+Since each DUC is associated with a single allocation, a call over the DUC's TransmitControl interface is implicitly associated with a single allocation.
+Interactions with parent devices means that calls over the TransmitControl interface applies to all child devices that support the TransmitControl interface.
+
+The reset method of the TransmitControl interface allows a device to exit the error state, empty its transmit queue, and reset all transmission counters.
+Set ignore_error to true in the TransmitParameters for the device's best-effort attempt to transmit data irrespective of error state.
+If ignore_error is set to true and an error condition occurs, such as an DEV_OVERFLOW, the device will notify the error state but continue to transmit.
+
+### Error States
+
+There are multiple errors associated with the FEI transmit API.
+
+#### DEV_UNDERFLOW
+
+The transmitter sets its transmission rate based on the xdelta (sampling period) for the stream.
+DEV_UNDERFLOW occurs when ignore_timestamp is set to true and there is not enough queued data to maintain the requested transmit rate.
+
+#### DEV_OVERFLOW
+
+The given xdelta (sampling period) for the stream is less than the maximum rate supported by the transmitter.
+If ignore_error is true, data is transmitted at the maximum rate supported by the hardware.
+
+#### DEV_INSUFFICIENT_SETTLING_TIME
+
+The time difference between bursts where a re-tune occurred is insufficient for the transmitter to settle to the new frequency before the provided timestamp expires.
+This error cannot occur if ignore_timestamp is set to true.
+
+#### DEV_MISSED_TRANSMIT_WINDOW
+
+The data burst was received too late to honor the timestamp.
+This error cannot occur if ignore_timestamp is true.
+
+#### DEV_INVALID_TRANSMIT_TIME_OVERLAP
+
+The difference in timestamp between consecutive bursts is less than the length of the first burst.
+This error cannot occur if ignore_timestamp is true.
+
+#### DEV_INVALID_HARDWARE_STATE
+
+The hardware has been incorrectly configured.
+The hardware cannot function as configured and the device is no longer transmitting irrespective of the state of the ignore_error flag.
+
+#### DEV_HARDWARE_FAILURE
+
+A catastrophic hardware failure has been detected.
+The hardware can no longer function and the device is no longer transmitting irrespective of the state of the ignore_error flag.
+
