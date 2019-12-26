@@ -454,12 +454,13 @@ The definition of the response to error states is control through the TransmitCo
             // duration of the burst is the length of the packet * the sampling period (in SRI)
         };
 
-        /* reset allocation(s):
-              - remove error codes
-              - empty the transmit queue
-              - reset total_samples count
-              - reset total_bursts count */
-        void reset()
+        // reset allocation(s):
+        //    - remove error codes
+        //    - empty the transmit queue
+        //    - reset total_samples count
+        //    - reset total_bursts count
+        // if stream_id == "", the reset applies to all streams
+        void reset(in string stream_id)
             raises (FRONTEND::FrontendException);
 
         void setTransmitParameters(in TransmitParameters transmit_parameters)
@@ -517,3 +518,22 @@ The hardware cannot function as configured and the device is no longer transmitt
 A catastrophic hardware failure has been detected.
 The hardware can no longer function and the device is no longer transmitting irrespective of the state of the ignore_error flag.
 
+### Transmission with Multiple Priorities
+
+Transmission with mixed priorities will lead to mixed error conditions.
+Suppose the transmitter is currently supporting transmissions for "Stream A" with no set priority.
+The transmissions for "Stream A" are queued and are in the process of tranmission.
+A new stream, "Stream B", is received by the DUC; "Stream B" has FRONTEND::PRIORITY = 5.
+"Stream B" has transmissions that overlap with "Stream A" bursts.
+Assuming that stream_id = "", ignore_error = false, and ignore_timestamp = false in TransmitParameters, in such instance the following occurs:
+
+- "Stream B" bursts are transmitted
+- "Stream A" queued bursts are flushed
+- A TransmitStatusType status change is generated:
+ - stream_id = "Stream A"
+ - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
+- All subsequent received "Stream A" bursts are immediately flushed
+- "Stream B" bursts proceed as planned and as they arrive
+- If new "Stream C" arrives, this stream is treated normally
+
+To allow "Stream A" to transmit again, reset() must be invoked on the DUC's control port.
