@@ -349,7 +349,7 @@ The FRONTEND::transmitter_allocation structure provides information regarding th
 | FRONTEND::transmitter_allocation::min_freq | min_freq | double | In Hz. Requested lower edge of the transmit range (-1 for ignore)
 | FRONTEND::transmitter_allocation::max_freq | max_freq | double | In Hz. Requested upper edge of the transmit range (-1 for ignore)
 | FRONTEND::transmitter_allocation::control_limit | control_limit | double | In seconds. control_limit >= sample_rate/(max_settle_time+min_dwell_time) is met before the next retune (-1 for ignore)
-| FRONTEND::transmitter_allocation::max_power | max_power | double | In Watts. max_power => transmitted burst power (-1 for ignore)
+| FRONTEND::transmitter_allocation::max_power | max_power | double | In Watts. max_power => transmitted power (-1 for ignore)
 
 As seen above, the FRONTEND::transmitter_allocation structure provides parameters for the expected agility of the transmitter; namely the minimum and maximum frequency over which transmissions may occur, the minimum effective dwell time for transmission (defined as the settling time plus the transmission time), and the maximum expected power.
 Each of these members may be set to "ignore" by passing a -1 as its value.
@@ -367,16 +367,16 @@ A successful allocation returns a reference to the DUC device as well as its dat
 Transmission queuing and execution is managed through BULK IO's timestamp.
 Providing a timestamp of 0 or in the past results in immediate transmission.
 Providing a timestamp in the future queues the packet for transmission when the current time matches the timestamp.
-This burst transmission process is shown below:
+This packet transmission process is shown below:
 
 ![Transmission API](tx_burst_seq.png)
 
 ```c++
     std::string stream_id = "testStream";
-    unsigned int size_burst_1 = 1000;
-    unsigned int size_burst_2 = 500;
-    unsigned int size_burst_3 = 400;
-    unsigned int size_burst_4 = 1200;
+    unsigned int size_packet_1 = 1000;
+    unsigned int size_packet_2 = 500;
+    unsigned int size_packet_3 = 400;
+    unsigned int size_packet_4 = 1200;
     double t1 = 5;
     double t2 = t1+5;
     double t3 = t2+4;
@@ -390,27 +390,27 @@ This burst transmission process is shown below:
         outputStream = dataShort_out->createStream(stream_id);
         outputStream.blocking(true);
     }
-    redhawk::buffer<short> Burst1(size_burst_1);
-    // data would be added to Burst1 here
+    redhawk::buffer<short> Packet1(size_packet_1);
+    // data would be added to Packet1 here
     tstamp.tfsec = tfsec + t1;
-    outputStream.write(Burst1, tstamp);
+    outputStream.write(Packet1, tstamp);
 
-    redhawk::buffer<short> Burst2(size_burst_2);
-    // data would be added to Burst2 here
+    redhawk::buffer<short> Packet2(size_packet_2);
+    // data would be added to Packet2 here
     tstamp.tfsec = tfsec + t2;
-    outputStream.write(Burst2, tstamp);
+    outputStream.write(Packet2, tstamp);
 
-    redhawk::buffer<short> Burst3(size_burst_3);
-    // data would be added to Burst3 here
+    redhawk::buffer<short> Packet3(size_packet_3);
+    // data would be added to Packet3 here
     tstamp.tfsec = tfsec + t3;
-    outputStream.write(Burst3, tstamp);
+    outputStream.write(Packet3, tstamp);
 
-    redhawk::buffer<short> Burst4(size_burst_4);
-    // data would be added to Burst4 here
+    redhawk::buffer<short> Packet4(size_packet_4);
+    // data would be added to Packet4 here
     tstamp.tfsec = tfsec + t4;
-    outputStream.write(Burst4, tstamp);
+    outputStream.write(Packet4, tstamp);
 ```
-As shown above, the different bursts are queued through the port's stream API, with the provided timestamp giving the transmitter transmission directions.
+As shown above, the different packets are queued through the port's stream API, with the provided timestamp giving the transmitter transmission directions.
 BULK IO is also used when transmissions are to be sent over different frequencies.
 The re-tuning instructions are inserted as keyword CHAN_RF in SRI updates, as seen below:
 
@@ -418,8 +418,8 @@ The re-tuning instructions are inserted as keyword CHAN_RF in SRI updates, as se
 
 ```c++
     std::string stream_id = "testStream";
-    unsigned int size_burst_1 = 1000;
-    unsigned int size_burst_2 = 500;
+    unsigned int size_packet_1 = 1000;
+    unsigned int size_packet_2 = 500;
     double t1 = 5;
     double t2 = t1+5;
     double f1 = 1e6;
@@ -438,17 +438,17 @@ The re-tuning instructions are inserted as keyword CHAN_RF in SRI updates, as se
 
     new_keywords["CHAN_RF"] = f1;
     outputStream.keywords(new_keywords);
-    redhawk::buffer<short> Burst1(size_burst_1);
-    // data would be added to Burst1 here
+    redhawk::buffer<short> Packet1(size_packet_1);
+    // data would be added to Packet1 here
     tstamp.tfsec = tfsec + t1;
-    outputStream.write(Burst1, tstamp);
+    outputStream.write(Packet1, tstamp);
 
     new_keywords["CHAN_RF"] = f2;
     outputStream.keywords(new_keywords);
-    redhawk::buffer<short> Burst2(size_burst_2);
-    // data would be added to Burst2 here
+    redhawk::buffer<short> Packet2(size_packet_2);
+    // data would be added to Packet2 here
     tstamp.tfsec = tfsec + t2;
-    outputStream.write(Burst2, tstamp);
+    outputStream.write(Packet2, tstamp);
 ```
 
 Note that the stream id plays no role in the basic transmit API.
@@ -457,8 +457,8 @@ To provide a stream id a particular priority, add the keyword FRONTEND::PRIORITY
 
 ```c++
     std::string stream_id = "testStream";
-    unsigned int size_burst_1 = 1000;
-    unsigned int size_burst_2 = 500;
+    unsigned int size_packet_1 = 1000;
+    unsigned int size_packet_2 = 500;
     double t1 = 5;
     double t2 = t1+5;
     double f1 = 1e6;
@@ -479,18 +479,18 @@ To provide a stream id a particular priority, add the keyword FRONTEND::PRIORITY
     new_keywords["CHAN_RF"] = f1;
     new_keywords["FRONTEND::PRIORITY"] = priority;
     outputStream.keywords(new_keywords);
-    redhawk::buffer<short> Burst1(size_burst_1);
-    // data would be added to Burst1 here
+    redhawk::buffer<short> Packet1(size_packet_1);
+    // data would be added to Packet1 here
     tstamp.tfsec = tfsec + t1;
-    outputStream.write(Burst1, tstamp);
+    outputStream.write(Packet1, tstamp);
 
     new_keywords["CHAN_RF"] = f2;
     // note that new_keywords still contains FRONTEND::PRIORITY
     outputStream.keywords(new_keywords);
-    redhawk::buffer<short> Burst2(size_burst_2);
-    // data would be added to Burst2 here
+    redhawk::buffer<short> Packet2(size_packet_2);
+    // data would be added to Packet2 here
     tstamp.tfsec = tfsec + t2;
-    outputStream.write(Burst2, tstamp);
+    outputStream.write(Packet2, tstamp);
 ```
 
 When overlapping scheduled transmissions conflict, the transmission with the higher priority is transmitted.
@@ -536,22 +536,22 @@ The DeviceStatus interfaces is as follows:
             string                      allocation_id;
             CF::UTCTime                 timestamp;
             unsigned long long          total_samples;  // number of samples transmitted from this stream id; resets to 0 when >= max Ulonglong
-            unsigned long long          total_bursts;   // number of bursts transmitted (pushPacket calls) from this stream id; resets to 0 when >= max Ulonglong
+            unsigned long long          total_packets;  // number of packets transmitted (pushPacket calls) from this stream id; resets to 0 when >= max Ulonglong
             boolean                     transmitting;   // true when currently transmitting, false when no queued data to transmit
             CF::DeviceStatusCodeType    status;         // device status
             double                      settling_time;  // this is the hardware's current re-tune settling time
-            unsigned long               queued_bursts;  // number of bursts that are yet to be transmitted (current queue size)
+            unsigned long               queued_packets; // number of packets that are yet to be transmitted (current queue size)
         };
 
         interface TransmitDeviceStatus : CF::DeviceStatus {
-            // triggers for status message: change in status, change in transmitting, or queued_bursts increases or becomes zero
+            // triggers for status message: change in status, change in transmitting, or queued_packets increases or becomes zero
             void transmitStatusChanged(in TransmitStatusType status);
         };
     };
 ```
 
 Control of the transmitter, beyond that afforded by timestamps and keywords in BULK IO, is concerned with error recovery.
-For example, in some CONOPs it may be required to have a well-defined strict schedule of transmitted bursts, while in other CONOPs, it may be acceptable for some bursts to be sent with loose timing or not at all.
+For example, in some CONOPs it may be required to have a well-defined strict schedule of transmitted packets, while in other CONOPs, it may be acceptable for some packets to be sent with loose timing or not at all.
 The definition of the response to error states is control through the TransmitControl interface, which in turn inherits from the DigitalTuner interface:
 
 ```idl
@@ -562,16 +562,16 @@ The definition of the response to error states is control through the TransmitCo
             boolean ignore_error;       // set to true to ignore error states and just transmit
             double  tx_power;           // -1 for don't care
             double  max_timing_error;   // how much deviation (over/under) before DEV_MISSED_TRANSMIT_WINDOW is set as the error code; -1 for don't care
-            // time for the burst transmission is the bulk io timestamp, unless ignore_timestamp is true; then data is sent as soon as it is available
-            // center frequency for the burst transmission is CHAN_RF keyword in SRI
-            // duration of the burst is the length of the packet * the sampling period (in SRI)
+            // time for the packet transmission is the bulk io timestamp, unless ignore_timestamp is true; then data is sent as soon as it is available
+            // center frequency for the packet transmission is CHAN_RF keyword in SRI
+            // duration of the packet is the length of the packet * the sampling period (in SRI)
         };
 
         // reset allocation(s):
         //    - remove error codes
         //    - empty the transmit queue
         //    - reset total_samples count
-        //    - reset total_bursts count
+        //    - reset total_packets count
         // if stream_id == "", the reset applies to all streams
         void reset(in string stream_id)
             raises (FRONTEND::FrontendException);
@@ -608,17 +608,17 @@ If ignore_error is true, data is transmitted at the maximum rate supported by th
 
 #### DEV_INSUFFICIENT_SETTLING_TIME
 
-The time difference between bursts where a re-tune occurred is insufficient for the transmitter to settle to the new frequency before the provided timestamp expires.
+The time difference between packets where a re-tune occurred is insufficient for the transmitter to settle to the new frequency before the provided timestamp expires.
 This error cannot occur if ignore_timestamp is set to true.
 
 #### DEV_MISSED_TRANSMIT_WINDOW
 
-The data burst was received too late to honor the timestamp.
+The data packet was received too late to honor the timestamp.
 This error cannot occur if ignore_timestamp is true.
 
 #### DEV_INVALID_TRANSMIT_TIME_OVERLAP
 
-The difference in timestamp between consecutive bursts is less than the length of the first burst.
+The difference in timestamp between consecutive packets is less than the length of the first packet.
 This error cannot occur if ignore_timestamp is true.
 
 #### DEV_INVALID_HARDWARE_STATE
@@ -631,22 +631,104 @@ The hardware cannot function as configured and the device is no longer transmitt
 A catastrophic hardware failure has been detected.
 The hardware can no longer function and the device is no longer transmitting irrespective of the state of the ignore_error flag.
 
-### Transmission with Multiple Priorities
+### Transmission with Multiple Priorities and Not Ignore Errors
 
 Transmission with mixed priorities will lead to mixed error conditions.
 Suppose the transmitter is currently supporting transmissions for "Stream A" with no set priority.
 The transmissions for "Stream A" are queued and are in the process of tranmission.
 A new stream, "Stream B", is received by the DUC; "Stream B" has FRONTEND::PRIORITY = 5.
-"Stream B" has transmissions that overlap with "Stream A" bursts.
+"Stream B" has transmissions that overlap with "Stream A" packets.
 Assuming that stream_id = "", ignore_error = false, and ignore_timestamp = false in TransmitParameters, in such instance the following occurs:
 
-- "Stream B" bursts are transmitted
-- "Stream A" queued bursts are flushed
+- "Stream B" packets are transmitted
+- "Stream A" queued packets are flushed
 - A TransmitStatusType status change is generated:
  - stream_id = "Stream A"
  - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
-- All subsequent received "Stream A" bursts are immediately flushed
-- "Stream B" bursts proceed as planned and as they arrive
-- If new "Stream C" arrives, this stream is treated normally
+- All subsequent received "Stream A" packets are immediately flushed
+- "Stream B" packets proceed as planned and as they arrive
+- If new "Stream C" with no priority set arrives, this stream operates normally until it overlaps with "Stream B"
 
-To allow "Stream A" to transmit again, reset() must be invoked on the DUC's control port.
+### Transmission with Multiple Priorities and Ignore Errors
+
+Transmission with mixed priorities will lead to mixed error conditions.
+Suppose the transmitter is currently supporting transmissions for "Stream A" with no set priority.
+The transmissions for "Stream A" are queued and are in the process of tranmission.
+A new stream, "Stream B", is received by the DUC; "Stream B" has FRONTEND::PRIORITY = 5.
+"Stream B" has transmissions that overlap with "Stream A" packets.
+Assuming that stream_id = "", ignore_error = true, and ignore_timestamp = false in TransmitParameters, in such instance the following occurs:
+
+- "Stream B" packets are transmitted
+- "Stream A" that overlap with "Stream B" packets are flushed
+- A TransmitStatusType status change is generated:
+ - stream_id = "Stream A"
+ - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
+- All subsequent received "Stream A" packets are flushed if they overlap with "Stream B" packets
+- "Stream B" packets proceed as planned and as they arrive
+- If new "Stream C" with no priority set arrives, this stream operates normally until it overlaps with "Stream B" or "Stream A"
+
+### Transmission with Multiple Priorities and Ignore Timestamp (both values of Ignore Errors)
+
+Transmission with mixed priorities will lead to mixed error conditions.
+Suppose the transmitter is currently supporting transmissions for "Stream A" with no set priority.
+The transmissions for "Stream A" are queued and are in the process of tranmission.
+A new stream, "Stream B", is received by the DUC; "Stream B" has FRONTEND::PRIORITY = 5.
+"Stream B" has transmissions that overlap with "Stream A" packets.
+Assuming that stream_id = "", ignore_error = false, and ignore_timestamp = true in TransmitParameters, in such instance the following occurs:
+
+- "Stream B" packets are transmitted
+- "Stream A" queued packets are ignored until "Stream B" queue is empty
+- "Stream B" packets proceed as planned and as they arrive; the "Stream A" packet queue is ignored until the "Stream B" packet queue is empty
+- If new "Stream C" with no priority set arrives, this stream queue is ignored until "Stream B" queue is empty
+- "Stream C" amd "Stream A" queues are handled on a first-come-first-served basis
+
+Because no error condition was triggered, the value of ignore_error has no effect on this scenario
+
+### Transmission with Equal (or no) Priorities and Not Ignore Errors
+
+Transmission with equal priorities or priorities not set will lead to consistent error conditions.
+Suppose the transmitter is currently supporting transmissions for "Stream A" with no set priority.
+The transmissions for "Stream A" are queued and are in the process of tranmission.
+A new stream, "Stream B", is received by the DUC also with no set priority.
+"Stream B" has transmissions that overlap with "Stream A" packets.
+Assuming that stream_id = "", ignore_error = false, and ignore_timestamp = false in TransmitParameters, in such instance the following occurs:
+
+- "Stream A" queued packets are flushed
+- "Stream B" queued packets are flushed
+- TransmitStatusType status change is generated:
+ - stream_id = "Stream A"
+ - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
+- TransmitStatusType status change is generated:
+ - stream_id = "Stream B"
+ - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
+- All subsequent received "Stream A" or "Stream B" packets are immediately flushed
+- If new "Stream C" arrives, this stream is treated normally, since it will not overlap with the flushed packets
+
+### Transmission with Equal (or no) Priorities and Ignore Errors
+
+Transmission with equal priorities or priorities not set will lead to consistent error conditions.
+Suppose the transmitter is currently supporting transmissions for "Stream A" with no set priority.
+The transmissions for "Stream A" are queued and are in the process of tranmission.
+A new stream, "Stream B", is received by the DUC also with no set priority.
+"Stream B" has transmissions that overlap with "Stream A" packets,.
+Assuming that stream_id = "", ignore_error = true, and ignore_timestamp = false in TransmitParameters, in such instance the following occurs:
+
+- "Stream B" packets whose timestamp arrive while "Stream A" is transmitting are flushed
+- "Stream A" packets whose timestamp arrive while "Stream B" is transmitting are flushed
+- TransmitStatusType status change is generated:
+ - stream_id = "Stream A"
+ - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
+- TransmitStatusType status change is generated:
+ - stream_id = "Stream B"
+ - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
+- Subsequent "Stream A" and "Stream B" packets are handled on a first-come-first-served basis
+- If new "Stream C" arrives also with no priority, this stream is treated equally as "Stream A" and "Stream B"
+
+### Error Recovery
+
+To remove the error state from any one stream, reset() must be invoked on the DUC's control port.
+After reset() is invoked, any stream in an error state (e.g.: "Stream A" in the above examples), has the following event issued:
+- TransmitStatusType status change is generated:
+ - stream_id = "Stream A"
+ - status = DEV_OK
+
