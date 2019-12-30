@@ -369,17 +369,130 @@ Providing a timestamp of 0 or in the past results in immediate transmission.
 Providing a timestamp in the future queues the packet for transmission when the current time matches the timestamp.
 This burst transmission process is shown below:
 
-![Transmission API](tx_burst_planning.png)
+![Transmission API](tx_burst_seq.png)
 
+```c++
+    std::string stream_id = "testStream";
+    unsigned int size_burst_1 = 1000;
+    unsigned int size_burst_2 = 500;
+    unsigned int size_burst_3 = 400;
+    unsigned int size_burst_4 = 1200;
+    double t1 = 5;
+    double t2 = t1+5;
+    double t3 = t2+4;
+    double t4 = t3+10;
+
+    BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
+    double tfsec = tstamp.tfsec;
+
+    bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
+    if (!outputStream) {
+        outputStream = dataShort_out->createStream(stream_id);
+        outputStream.blocking(true);
+    }
+    redhawk::buffer<short> Burst1(size_burst_1);
+    // data would be added to Burst1 here
+    tstamp.tfsec = tfsec + t1;
+    outputStream.write(Burst1, tstamp);
+
+    redhawk::buffer<short> Burst2(size_burst_2);
+    // data would be added to Burst2 here
+    tstamp.tfsec = tfsec + t2;
+    outputStream.write(Burst2, tstamp);
+
+    redhawk::buffer<short> Burst3(size_burst_3);
+    // data would be added to Burst3 here
+    tstamp.tfsec = tfsec + t3;
+    outputStream.write(Burst3, tstamp);
+
+    redhawk::buffer<short> Burst4(size_burst_4);
+    // data would be added to Burst4 here
+    tstamp.tfsec = tfsec + t4;
+    outputStream.write(Burst4, tstamp);
+```
 As shown above, the different bursts are queued through the port's stream API, with the provided timestamp giving the transmitter transmission directions.
 BULK IO is also used when transmissions are to be sent over different frequencies.
 The re-tuning instructions are inserted as keyword CHAN_RF in SRI updates, as seen below:
 
-![Multi-Frequency Transmission API](tx_freq_hop_burst_planning.png)
+![Multi-Frequency Transmission API](tx_burst_freq_seq.png)
+
+```c++
+    std::string stream_id = "testStream";
+    unsigned int size_burst_1 = 1000;
+    unsigned int size_burst_2 = 500;
+    double t1 = 5;
+    double t2 = t1+5;
+    double f1 = 1e6;
+    double f2 = 2e6;
+
+    BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
+    double tfsec = tstamp.tfsec;
+
+    bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
+    if (!outputStream) {
+        outputStream = dataShort_out->createStream(stream_id);
+        outputStream.blocking(true);
+    }
+
+    redhawk::PropertyMap new_keywords;
+
+    new_keywords["CHAN_RF"] = f1;
+    outputStream.keywords(new_keywords);
+    redhawk::buffer<short> Burst1(size_burst_1);
+    // data would be added to Burst1 here
+    tstamp.tfsec = tfsec + t1;
+    outputStream.write(Burst1, tstamp);
+
+    new_keywords["CHAN_RF"] = f2;
+    outputStream.keywords(new_keywords);
+    redhawk::buffer<short> Burst2(size_burst_2);
+    // data would be added to Burst2 here
+    tstamp.tfsec = tfsec + t2;
+    outputStream.write(Burst2, tstamp);
+```
 
 Note that the stream id plays no role in the basic transmit API.
 Stream id differentiation becomes important when different transmission priorities are mixed.
 To provide a stream id a particular priority, add the keyword FRONTEND::PRIORITY with value of type short with the stream's priority to the SRI keywords.
+
+```c++
+    std::string stream_id = "testStream";
+    unsigned int size_burst_1 = 1000;
+    unsigned int size_burst_2 = 500;
+    double t1 = 5;
+    double t2 = t1+5;
+    double f1 = 1e6;
+    double f2 = 2e6;
+    short priority = 3;
+
+    BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
+    double tfsec = tstamp.tfsec;
+
+    bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
+    if (!outputStream) {
+        outputStream = dataShort_out->createStream(stream_id);
+        outputStream.blocking(true);
+    }
+
+    redhawk::PropertyMap new_keywords;
+
+    new_keywords["CHAN_RF"] = f1;
+    new_keywords["FRONTEND::PRIORITY"] = priority;
+    outputStream.keywords(new_keywords);
+    redhawk::buffer<short> Burst1(size_burst_1);
+    // data would be added to Burst1 here
+    tstamp.tfsec = tfsec + t1;
+    outputStream.write(Burst1, tstamp);
+
+    new_keywords["CHAN_RF"] = f2;
+    // note that new_keywords still contains FRONTEND::PRIORITY
+    outputStream.keywords(new_keywords);
+    redhawk::buffer<short> Burst2(size_burst_2);
+    // data would be added to Burst2 here
+    tstamp.tfsec = tfsec + t2;
+    outputStream.write(Burst2, tstamp);
+```
+
 When overlapping scheduled transmissions conflict, the transmission with the higher priority is transmitted.
 
 Feedback from the device is sent through the DUC's status port, as seen in the following figure:
