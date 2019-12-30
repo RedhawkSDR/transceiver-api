@@ -504,6 +504,31 @@ To transmit multiple packets as a single continuous signal burst, setting the ti
 To remove the ambiguity of the transmitted construct, the timestamp in subsequent packet(s) can be set such that the separate packets are interpreted by the transmitter as a continuous transmitted signal.
 Set the timestamp to invalid and both the whole (twsec) and fractional (tfsec) to 0, as shown below:
 
+```c++
+    std::string stream_id = "testStream";
+    unsigned int size_packet_1 = 1000;
+    unsigned int size_packet_2 = 500;
+
+    BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
+
+    bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
+    if (!outputStream) {
+        outputStream = dataShort_out->createStream(stream_id);
+        outputStream.blocking(true);
+    }
+
+    redhawk::buffer<short> Burst1(size_packet_1);
+    // data would be added to Burst1 here
+    tstamp.twsec = tstamp.twsec + 5;
+    outputStream.write(Burst1, tstamp);
+
+    redhawk::buffer<short> Burst2(size_packet_2);
+    // data would be added to Burst2 here
+    tstamp.tcstatus = BULKIO::TCS_INVALID;
+    tstamp.tfsec = 0;
+    tstamp.twsec = 0;
+    outputStream.write(Burst2, tstamp);
+```
 
 ### Feedback
 
@@ -642,6 +667,10 @@ The hardware cannot function as configured and the device is no longer transmitt
 
 A catastrophic hardware failure has been detected.
 The hardware can no longer function and the device is no longer transmitting irrespective of the state of the ignore_error flag.
+
+## Conflicting transmit stream scenarios
+
+The following sections describe several scenarios where the timestamp and priority between different streams conflicts and the corresponding behavior.
 
 ### Transmission with Multiple Priorities and Not Ignore Errors
 
