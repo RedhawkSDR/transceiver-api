@@ -677,8 +677,8 @@ Assuming that stream_id = "", ignore_error = false, and ignore_timestamp = false
 - "Stream B" packets are transmitted
 - "Stream A" queued packets are flushed
 - A TransmitStatusType status change is generated:
- - stream_id = "Stream A"
- - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
+  - stream_id = "Stream A"
+  - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
 - All subsequent received "Stream A" packets are immediately flushed
 - "Stream B" packets proceed as planned and as they arrive
 - If new "Stream C" with no priority set arrives, this stream operates normally until it overlaps with "Stream B"
@@ -695,8 +695,8 @@ Assuming that stream_id = "", ignore_error = true, and ignore_timestamp = false 
 - "Stream B" packets are transmitted
 - "Stream A" that overlap with "Stream B" packets are flushed
 - A TransmitStatusType status change is generated:
- - stream_id = "Stream A"
- - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
+  - stream_id = "Stream A"
+  - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
 - All subsequent received "Stream A" packets are flushed if they overlap with "Stream B" packets
 - "Stream B" packets proceed as planned and as they arrive
 - If new "Stream C" with no priority set arrives, this stream operates normally until it overlaps with "Stream B" or "Stream A"
@@ -730,11 +730,11 @@ Assuming that stream_id = "", ignore_error = false, and ignore_timestamp = false
 - "Stream A" queued packets are flushed
 - "Stream B" queued packets are flushed
 - TransmitStatusType status change is generated:
- - stream_id = "Stream A"
- - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
+  - stream_id = "Stream A"
+  - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
 - TransmitStatusType status change is generated:
- - stream_id = "Stream B"
- - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
+  - stream_id = "Stream B"
+  - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
 - All subsequent received "Stream A" or "Stream B" packets are immediately flushed
 - If new "Stream C" arrives, this stream is treated normally, since it will not overlap with the flushed packets
 
@@ -750,11 +750,11 @@ Assuming that stream_id = "", ignore_error = true, and ignore_timestamp = false 
 - "Stream B" packets whose timestamp arrive while "Stream A" is transmitting are flushed
 - "Stream A" packets whose timestamp arrive while "Stream B" is transmitting are flushed
 - TransmitStatusType status change is generated:
- - stream_id = "Stream A"
- - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
+  - stream_id = "Stream A"
+  - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
 - TransmitStatusType status change is generated:
- - stream_id = "Stream B"
- - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
+  - stream_id = "Stream B"
+  - status = DEV_INVALID_TRANSMIT_TIME_OVERLAP
 - Subsequent "Stream A" and "Stream B" packets are handled on a first-come-first-served basis
 - If new "Stream C" arrives also with no priority, this stream is treated equally as "Stream A" and "Stream B"
 
@@ -763,6 +763,6 @@ Assuming that stream_id = "", ignore_error = true, and ignore_timestamp = false 
 To remove the error state from any one stream, reset() must be invoked on the DUC's control port.
 After reset() is invoked, any stream in an error state (e.g.: "Stream A" in the above examples), has the following event issued:
 - TransmitStatusType status change is generated:
- - stream_id = "Stream A"
- - status = DEV_OK
+  - stream_id = "Stream A"
+  - status = DEV_OK
 
