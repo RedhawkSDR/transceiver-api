@@ -383,7 +383,7 @@ This packet transmission process is shown below:
     double t4 = t3+10;
 
     BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
-    double tfsec = tstamp.tfsec;
+    double twsec = tstamp.twsec;
 
     bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
     if (!outputStream) {
@@ -392,25 +392,25 @@ This packet transmission process is shown below:
     }
     redhawk::buffer<short> Packet1(size_packet_1);
     // data would be added to Packet1 here
-    tstamp.tfsec = tfsec + t1;
+    tstamp.twsec = twsec + t1;
     outputStream.write(Packet1, tstamp);
 
     redhawk::buffer<short> Packet2(size_packet_2);
     // data would be added to Packet2 here
-    tstamp.tfsec = tfsec + t2;
+    tstamp.twsec = twsec + t2;
     outputStream.write(Packet2, tstamp);
 
     redhawk::buffer<short> Packet3(size_packet_3);
     // data would be added to Packet3 here
-    tstamp.tfsec = tfsec + t3;
+    tstamp.twsec = twsec + t3;
     outputStream.write(Packet3, tstamp);
 
     redhawk::buffer<short> Packet4(size_packet_4);
     // data would be added to Packet4 here
-    tstamp.tfsec = tfsec + t4;
+    tstamp.twsec = twsec + t4;
     outputStream.write(Packet4, tstamp);
 ```
-As shown above, the different packets are queued through the port's stream API, with the provided timestamp giving the transmitter transmission directions.
+As shown above, the different packets are wqueued through the port's stream API, with the provided timestamp giving the transmitter transmission directions.
 BULK IO is also used when transmissions are to be sent over different frequencies.
 The re-tuning instructions are inserted as keyword CHAN_RF in SRI updates, as seen below:
 
@@ -426,7 +426,7 @@ The re-tuning instructions are inserted as keyword CHAN_RF in SRI updates, as se
     double f2 = 2e6;
 
     BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
-    double tfsec = tstamp.tfsec;
+    double twsec = tstamp.twsec;
 
     bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
     if (!outputStream) {
@@ -440,14 +440,14 @@ The re-tuning instructions are inserted as keyword CHAN_RF in SRI updates, as se
     outputStream.keywords(new_keywords);
     redhawk::buffer<short> Packet1(size_packet_1);
     // data would be added to Packet1 here
-    tstamp.tfsec = tfsec + t1;
+    tstamp.twsec = twsec + t1;
     outputStream.write(Packet1, tstamp);
 
     new_keywords["CHAN_RF"] = f2;
     outputStream.keywords(new_keywords);
     redhawk::buffer<short> Packet2(size_packet_2);
     // data would be added to Packet2 here
-    tstamp.tfsec = tfsec + t2;
+    tstamp.twsec = twsec + t2;
     outputStream.write(Packet2, tstamp);
 ```
 
@@ -466,7 +466,7 @@ To provide a stream id a particular priority, add the keyword FRONTEND::PRIORITY
     short priority = 3;
 
     BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
-    double tfsec = tstamp.tfsec;
+    double twsec = tstamp.twsec;
 
     bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
     if (!outputStream) {
@@ -481,7 +481,7 @@ To provide a stream id a particular priority, add the keyword FRONTEND::PRIORITY
     outputStream.keywords(new_keywords);
     redhawk::buffer<short> Packet1(size_packet_1);
     // data would be added to Packet1 here
-    tstamp.tfsec = tfsec + t1;
+    tstamp.twsec = twsec + t1;
     outputStream.write(Packet1, tstamp);
 
     new_keywords["CHAN_RF"] = f2;
@@ -489,11 +489,23 @@ To provide a stream id a particular priority, add the keyword FRONTEND::PRIORITY
     outputStream.keywords(new_keywords);
     redhawk::buffer<short> Packet2(size_packet_2);
     // data would be added to Packet2 here
-    tstamp.tfsec = tfsec + t2;
+    tstamp.twsec = twsec + t2;
     outputStream.write(Packet2, tstamp);
 ```
 
 When overlapping scheduled transmissions conflict, the transmission with the higher priority is transmitted.
+
+### Continuous burst
+
+To transmit multiple packets as a single continuous signal burst, setting the timestamp to immediately follow end of the last symbol can lead to undefined boundary conditions.
+
+![Continuous Transmission](single_burst.png)
+
+To remove the ambiguity of the transmitted construct, the timestamp in subsequent packet(s) can be set such that the separate packets are interpreted by the transmitter as a continuous transmitted signal.
+Set the timestamp to invalid and both the whole (twsec) and fractional (tfsec) to 0, as shown below:
+
+
+### Feedback
 
 Feedback from the device is sent through the DUC's status port, as seen in the following figure:
 
