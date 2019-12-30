@@ -376,11 +376,9 @@ This packet transmission process is shown below:
     unsigned int size_packet_1 = 1000;
     unsigned int size_packet_2 = 500;
     unsigned int size_packet_3 = 400;
-    unsigned int size_packet_4 = 1200;
     double t1 = 5;
     double t2 = t1+5;
     double t3 = t2+4;
-    double t4 = t3+10;
 
     BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
     double twsec = tstamp.twsec;
@@ -404,11 +402,6 @@ This packet transmission process is shown below:
     // data would be added to Packet3 here
     tstamp.twsec = twsec + t3;
     outputStream.write(Packet3, tstamp);
-
-    redhawk::buffer<short> Packet4(size_packet_4);
-    // data would be added to Packet4 here
-    tstamp.twsec = twsec + t4;
-    outputStream.write(Packet4, tstamp);
 ```
 As shown above, the different packets are wqueued through the port's stream API, with the provided timestamp giving the transmitter transmission directions.
 BULK IO is also used when transmissions are to be sent over different frequencies.
