@@ -12,7 +12,7 @@ An example definition of child devices with respect to a parent device is shown 
 ![Parent/Child Device Definition and Generation](device_generation.png)
 
 The parent device is defined by three XML files:  Software Package Descriptor (SPD), Software Component Descriptor (SCD), and Properties Definition (PRF).
-Since child devices share the SPD with the parent, they only require SCD and PRF files,
+Since child devices share the SPD with the parent, they only require SCD and PRF files.
 The generated code is a single project that contains all device classes.
 
 Devices are deployed programmatically at runtime using the `addChild` method in the Device base class.
@@ -51,7 +51,7 @@ my_parent
 |   |   |   child_class_b_base.h
 ```
 
-Expand the previous example so that child_class_a is the parent of a second instance of child_class_b.
+Expanding the previous example so that child_class_a is the parent of a second instance of child_class_b.
 Then the code in my_parent.cpp would contain:
 
 ``` c++
@@ -90,7 +90,7 @@ for (unsigned int i=0; i<_dynamicComponents.size(); i++) {
 ```
 
 The vector `_dynamicComponents` is public, so a particular device's children can be inspected by other classes.
-Thread-safe changes to `_dynamicComponents` are managed through the DynamicComponent class's `_dynamicComponentDeploymentLock` member.
+Thread-safe changes to `_dynamicComponents` are managed through the DynamicComponent base class's `_dynamicComponentDeploymentLock` member.
 
 Through the Aggregate device interface, each device has access to its parent and children.  The following code demonstrates this access with a different arrangement of devices.
 ```python
