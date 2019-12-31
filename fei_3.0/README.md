@@ -3,25 +3,21 @@
 
 Multi-channel devices provide a single point where different, often independent, RF devices operate.
 However, these devices are bound in the same enclosure, making them inter-linked in arbitrary ways.
-To further complicate the issue, independent channels may not be fixed in number, as in the case of a channelizer implemented on FPGA.
+Further, independent channels may not be fixed in number, as in the case of a channelizer implemented on FPGA.
 
-For these reasons, a static definition (e.g.: XML-defined) for these devices is not the most appropriate implementation.
-To address this workflow, the concepts of child devices was developed for FEI 3.0.
-In child devices, a single device process space is used to associate multiple device class definitions.
-The definition of these child devices with respect to the parent device is shown in the following diagram:
+To model a workflow with multi-channel devices, the concept of child devices was developed for FEI 3.0.
+With child devices, a single device process space is used to associate multiple device class definitions.
+An example definition of child devices with respect to a parent device is shown in the following diagram:
 
 ![Parent/Child Device Definition and Generation](device_generation.png)
 
-As seen in the image above, the parent device is defined by its software package, software component, and properties definition XML (SPD, SCD, and PRF, respetively).
-Each child device is defined as software component and property definition files only, since they share the software package definition with the parent device.
+The parent device is defined by three XML files:  Software Package Descriptor (SPD), Software Component Descriptor (SCD), and Properties Definition (PRF).
+Since child devices share the SPD with the parent, they only require SCD and PRF files,
 The generated code is a single project that contains all device classes.
 
-Devices are deployed programmatically at runtime.
-Device deployment is through the addChild method in the Device base class.
-The addChild method is invoked on whichever device is the logical parent of the child device.
-
-For example, suppose that XML is defined for device "my_parent", "child_class_a", and "child_class_b".
-After the code is generated, the directory is populated with the following file tree:
+Devices are deployed programmatically at runtime using the `addChild` method in the Device base class.
+The `addChild` method is invoked on the logical parent of the child device.
+For example, suppose that XML is defined for device "my_parent", "child_class_a", and "child_class_b".  Then code generation would produce the following file tree:
 
 ```
 my_parent
@@ -55,7 +51,8 @@ my_parent
 |   |   |   child_class_b_base.h
 ```
 
-If a device instance tree were to model the underlying hardware where my_parent has an instance of child_class_a and an instance of child_class_b as children, with the instance of child_class_a with an additional instance of child_class_b as children, the code in my_parent.cpp would be as follows:
+Expand the previous example so that child_class_a is the parent of a second instance of child_class_b.
+Then the code in my_parent.cpp would contain:
 
 ``` c++
 #include "child_class_a/child_class_a.h"
@@ -76,47 +73,45 @@ void my_parent_i::constructor()
 }
 ```
 
-Note that the instantiation is to a local variable that will exit scope at the end of the function.
-Even though the pointer exits scope, the device is still present as a child.
-To retrieve the deployed child devices, member _dynamicComponents, a vector of Device_impl pointers contains all devices that the parent currently holds, can be used.
-Below is an example of using _dynamicComponents:
+Each Device has a member named `_dynamicComponents`, with handles to each of its children.
+Below is an example of using `_dynamicComponents`:
 
 ``` c++
-    for (unsigned int i=0; i<_dynamicComponents.size(); i++) {
-        child_class_a_i* base_dev = dynamic_cast<child_class_a_i*>(_dynamicComponents[i]);
-        std::cout<<"  "<<_dynamicComponents[i]->_identifier;
-        if (base_dev == NULL) {
-            std::cout<<" is not of type child_class_a_i";
-        } else {
-            std::cout<<" is of type child_class_a_i";
-        }
-        std::cout<<std::endl;
+for (unsigned int i=0; i<_dynamicComponents.size(); i++) {
+    child_class_a_i* base_dev = dynamic_cast<child_class_a_i*>(_dynamicComponents[i]);
+    std::cout<<"  "<<_dynamicComponents[i]->_identifier;
+    if (base_dev == NULL) {
+        std::cout<<" is not of type child_class_a_i";
+    } else {
+        std::cout<<" is of type child_class_a_i";
     }
+    std::cout<<std::endl;
+}
 ```
 
-The vector _dynamicComponents is public, so a particular device's children can be inspected by other classes.
-Thread-safe changes to _dynamicComponents are managed through the DynamicComponent class's _dynamicComponentDeploymentLock member.
+The vector `_dynamicComponents` is public, so a particular device's children can be inspected by other classes.
+Thread-safe changes to `_dynamicComponents` are managed through the DynamicComponent class's `_dynamicComponentDeploymentLock` member.
 
-The relationship between child and parent devices can be tracked through the Aggregate device interface, where the parent device has a list of child devices and each child lists the parent:
+Through the Aggregate device interface, each device has access to its parent and children.  The following code demonstrates this access with a different arrangement of devices.
 ```python
-    from ossie.utils import redhawk
-    dom=redhawk.attach()
-    DeviceA = None
-    for dev in dom.devMgrs[0].devs:
-        if dev.name == 'DeviceA':
-            DeviceA = dev
-            break
+from ossie.utils import redhawk
+dom = redhawk.attach()
+DeviceA = None
+for dev in dom.devMgrs[0].devs:
+    if dev.name == 'DeviceA':
+        DeviceA = dev
+        break
 
-    DeviceB = DeviceA.devices[0]
+DeviceB = DeviceA.devices[0]
 
-    DeviceC = DeviceB.devices[0]
-    DeviceD = DeviceB.devices[1]
+DeviceC = DeviceB.devices[0]
+DeviceD = DeviceB.devices[1]
 
-    up_DeviceB = DeviceC.compositeDevice
-    up_DeviceA = up_DeviceB.compositeDevice
+up_DeviceB = DeviceC.compositeDevice
+up_DeviceA = up_DeviceB.compositeDevice
 ```
 
-The relationship between parent device A, child device B, itself with child device C and child device D is shown graphically:
+The relationship above is shown graphically, below:
 
 ![Navigating Parent/Child Devices](child_aggregate_device.png)
 
@@ -139,16 +134,16 @@ Single allocations can now be made through the allocate() call.
 The allocate method is defined as follows:
 
 ```idl
-    struct Allocation {
-        CF::Device device_ref;      // device that satisfied the allocation (the allocation could have been delegated)
-        Object data_port;           // data port (provides for TX, uses for RX)
-        Object control_port;        // control port - object ref
-        CF::Properties allocated;   // what allocation values the device met
-        string alloc_id;            // unique identifier (used to deallocate)
-    };
-    typedef sequence <Allocation> Allocations;
+struct Allocation {
+    CF::Device device_ref;      // device that satisfied the allocation (the allocation could have been delegated)
+    Object data_port;           // data port (provides for TX, uses for RX)
+    Object control_port;        // control port - object ref
+    CF::Properties allocated;   // what allocation values the device met
+    string alloc_id;            // unique identifier (used to deallocate)
+};
+typedef sequence <Allocation> Allocations;
 
-    Allocations allocate(in CF::Properties capacities);
+Allocations allocate(in CF::Properties capacities);
 ```
 
 The allocate method takes a sequence of properties as its argument and returns a sequence of Allocation structures.
@@ -175,7 +170,7 @@ Deallocation is based on the allocation id returned in the Allocation structures
 The deallocate call is as follows:
 
 ```idl
-    void deallocate(in allocation_id);
+void deallocate(in allocation_id);
 ```
 
 All devices that are associated with the given allocation id are deallocated.
@@ -232,34 +227,34 @@ This relationship can be shown programmatically from the Python sandbox.
 For example, assuming that the Python session is attached to a domain with a deployment of the devices and node included in this project, the following code can be used to retrieve the array, the rx_digitizer receivers, and the single-channel ddc tuners:
 
 ```python
-    from ossie.utils import redhawk
-    dom=redhawk.attach()
-    agg_dev = None
-    for dev in dom.devMgrs[0].devs:
-        if dev.name == 'rx_array':
-            agg_dev = dev
-            break
-    rx_d_1 = agg_dev.devices[0]
-    rx_d_2 = agg_dev.devices[1]
+from ossie.utils import redhawk
+dom = redhawk.attach()
+agg_dev = None
+for dev in dom.devMgrs[0].devs:
+    if dev.name == 'rx_array':
+        agg_dev = dev
+        break
+rx_d_1 = agg_dev.devices[0]
+rx_d_2 = agg_dev.devices[1]
 
-    ddc_in_rx_d_1 = []
-    for dev in rx_d_1.devices:
-        ddc_in_rx_d_1.append(dev)
+ddc_in_rx_d_1 = []
+for dev in rx_d_1.devices:
+    ddc_in_rx_d_1.append(dev)
 
-    ddc_in_rx_d_2 = []
-    for dev in rx_d_2.devices:
-        ddc_in_rx_d_2.append(dev)
+ddc_in_rx_d_2 = []
+for dev in rx_d_2.devices:
+    ddc_in_rx_d_2.append(dev)
 ```
 
 The parent device can be retrieved from any one child device.
 
 ```python
-    for dev in dom.devMgrs[0].devs:
-        if 'ddc' in dev.label:
-            ddc_rx = dev
-            break
-    rx_d = ddc_rx.compositeDevice
-    rx_array = rx_d.compositeDevice
+for dev in dom.devMgrs[0].devs:
+    if 'ddc' in dev.label:
+        ddc_rx = dev
+        break
+rx_d = ddc_rx.compositeDevice
+rx_array = rx_d.compositeDevice
 ```
 
 For the array to function correctly, each wideband receiver must be connected to a different antenna; this antenna can be modeled with the GenericAntenna device, and its RFInfo port can be used to pass the rf_flow_id for that specific antenna element.
@@ -274,41 +269,53 @@ To allocate an array, the allocation property "FRONTEND::coherent_feeds" of type
 
 To allocate 2 tuners with 1kHz of bandwidth for rf_flow_id "aperture_1" and "aperture_2", perform the following allocation:
 ```python
-    from ossie.utils import redhawk
-    import frontend
-    from ossie.cf import CF
-    from omniORB import any as _any
+from ossie.utils import redhawk
+import frontend
+from ossie.cf import CF
+from omniORB import any as _any
 
-    dom=redhawk.attach()
-    agg_dev = None
-    for dev in dom.devMgrs[0].devs:
-        if dev.name == 'rx_array':
-            agg_dev = dev
-            break
+dom = redhawk.attach()
+agg_dev = None
+for dev in dom.devMgrs[0].devs:
+    if dev.name == 'rx_array':
+        agg_dev = dev
+        break
 
-    alloc_tuner_1=frontend.createTunerAllocation(tuner_type='DDC',allocation_id='alloc_id_1', bandwidth=1000.0,returnDict=False)
-    coherent_request=CF.DataType(id='FRONTEND::coherent_feeds', value=_any.to_any(['aperture_1', 'aperture_2']))
-    allocation_response = agg_dev.allocate([alloc_tuner_1, coherent_request])
+alloc_tuner_1 = frontend.createTunerAllocation(tuner_type='DDC',
+                                               allocation_id='alloc_id_1',
+                                               bandwidth=1000.0,
+                                               returnDict=False)
+coherent_request = CF.DataType(id='FRONTEND::coherent_feeds',
+                               value=_any.to_any(['aperture_1', 'aperture_2']))
+allocation_response = agg_dev.allocate([alloc_tuner_1, coherent_request])
 ```
 
 Deallocation requires the same properties:
 ```python
-    agg_dev.deallocate(allocation_response[0].alloc_id)
+agg_dev.deallocate(allocation_response[0].alloc_id)
 ```
 
 To allocate 2 tuners with 1kHz of bandwidth for any rf_flow_id, perform the following allocation:
 ```python
-    alloc_tuner_1=frontend.createTunerAllocation(tuner_type='DDC',allocation_id='alloc_id_1', bandwidth=1000.0,returnDict=False)
-    coherent_request_any_feed=CF.DataType(id='FRONTEND::coherent_feeds', value=_any.to_any(['', '']))
-    allocation_response = agg_dev.allocate([alloc_tuner_1, coherent_request_any_feed])
+alloc_tuner_1 = frontend.createTunerAllocation(tuner_type='DDC',
+                                               allocation_id='alloc_id_1',
+                                               bandwidth=1000.0,
+                                               returnDict=False)
+coherent_request_any_feed = CF.DataType(id='FRONTEND::coherent_feeds',
+                                        value=_any.to_any(['', '']))
+allocation_response = agg_dev.allocate([alloc_tuner_1, coherent_request_any_feed])
 ```
 
 To allocate scanning tuners, all is needed is to include the scanner allocation request. For example, assuming that a scanning functionality is needed where the scanner is expected to change frequencies above 10kHz, use the following allocation:
 
 ```python
-    alloc_scanner=frontend.createScannerAllocation(min_freq=10000.0,returnDict=False) alloc_tuner_1=frontend.createTunerAllocation(tuner_type='DDC',allocation_id='alloc_id_1', bandwidth=1000.0,returnDict=False)
-    coherent_request_any_feed=CF.DataType(id='FRONTEND::coherent_feeds', value=_any.to_any(['', '']))
-    allocation_response = agg_dev.allocate([alloc_tuner_1, coherent_request_any_feed])
+alloc_scanner = frontend.createScannerAllocation(min_freq=10000.0, returnDict=False)
+alloc_tuner_1 = frontend.createTunerAllocation(tuner_type='DDC',
+                                               allocation_id='alloc_id_1',
+                                               bandwidth=1000.0,
+                                               returnDict=False)
+coherent_request_any_feed=CF.DataType(id='FRONTEND::coherent_feeds', value=_any.to_any(['', '']))
+allocation_response = agg_dev.allocate([alloc_tuner_1, coherent_request_any_feed])
 ```
 
 If scanning functionality is needed, then each device's scan plan needs to be set independently, where the scan strategy is set for each device separately and the scan start time is set to some arbitrary time in the future.
@@ -318,16 +325,19 @@ If scanning functionality is needed, then each device's scan plan needs to be se
 A benefit of this approach is that each tuner is single-channel, that means that there is not multi-out functionality controlled by a connectionTable. The only data outputs are out of each single-channel tuner, and each of these tuners can support only a single stream. This means that no special name convention is needed for the connection id
 
 ```python
-    alloc_tuner_1=frontend.createTunerAllocation(tuner_type='DDC',allocation_id='alloc_id_1', bandwidth=1000.0,returnDict=False)
-    coherent_request_any_feed=CF.DataType(id='FRONTEND::coherent_feeds', value=_any.to_any(['', '']))
-    allocation_response = agg_dev.allocate([alloc_tuner_1, coherent_request_any_feed])
+alloc_tuner_1 = frontend.createTunerAllocation(tuner_type='DDC',
+                                               allocation_id='alloc_id_1',
+                                               bandwidth=1000.0,
+                                               returnDict=False)
+coherent_request_any_feed = CF.DataType(id='FRONTEND::coherent_feeds', value=_any.to_any(['', '']))
+allocation_response = agg_dev.allocate([alloc_tuner_1, coherent_request_any_feed])
 
-    # assume that component "process_narrowband" exists and has a bulkio input port that matches the ddc output
-    snk_1 = sb.launch('process_narrowband')
-    snk_2 = sb.launch('process_narrowband')
+# assume that component "process_narrowband" exists and has a bulkio input port that matches the ddc output
+snk_1 = sb.launch('process_narrowband')
+snk_2 = sb.launch('process_narrowband')
 
-    allocation_response[0].data_port.connectPort(snk_1.getPort('dataShort_in'), 'connection_id_1')
-    allocation_response[1].data_port.connectPort(snk_2.getPort('dataShort_in'), 'connection_id_1')
+allocation_response[0].data_port.connectPort(snk_1.getPort('dataShort_in'), 'connection_id_1')
+allocation_response[1].data_port.connectPort(snk_2.getPort('dataShort_in'), 'connection_id_1')
 ```
 
 ## Transmit CONOP
@@ -357,9 +367,16 @@ Each of these members may be set to "ignore" by passing a -1 as its value.
 An example allocation of a transmitter is as follows:
 
 ```python
-    alloc_tuner_1=frontend.createTunerAllocation(tuner_type='DUC',allocation_id='alloc_id_1', center_frequency=1e6,returnDict=False)
-    alloc_duc_1=frontend.createTransmitAllocation(min_freq=900e3, max_freq=1.1e6, control_limit=0.1, max_power=-1,returnDict=False)
-    allocation_response = agg_dev.allocate([alloc_tuner_1, alloc_duc_1])
+alloc_tuner_1 = frontend.createTunerAllocation(tuner_type='DUC',
+                                               allocation_id='alloc_id_1',
+                                               center_frequency=1e6,
+                                               returnDict=False)
+alloc_duc_1 = frontend.createTransmitAllocation(min_freq=900e3,
+                                                max_freq=1.1e6,
+                                                control_limit=0.1,
+                                                max_power=-1,
+                                                returnDict=False)
+allocation_response = agg_dev.allocate([alloc_tuner_1, alloc_duc_1])
 ```
 
 A successful allocation returns a reference to the DUC device as well as its data port, in this case an input or "provides" port, and the control port.
@@ -372,36 +389,36 @@ This packet transmission process is shown below:
 ![Transmission API](tx_burst_seq.png)
 
 ```c++
-    std::string stream_id = "testStream";
-    unsigned int size_packet_1 = 1000;
-    unsigned int size_packet_2 = 500;
-    unsigned int size_packet_3 = 400;
-    double t1 = 5;
-    double t2 = t1+5;
-    double t3 = t2+4;
+std::string stream_id = "testStream";
+unsigned int size_packet_1 = 1000;
+unsigned int size_packet_2 = 500;
+unsigned int size_packet_3 = 400;
+double t1 = 5;
+double t2 = t1+5;
+double t3 = t2+4;
 
-    BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
-    double twsec = tstamp.twsec;
+BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
+double twsec = tstamp.twsec;
 
-    bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
-    if (!outputStream) {
-        outputStream = dataShort_out->createStream(stream_id);
-        outputStream.blocking(true);
-    }
-    redhawk::buffer<short> Packet1(size_packet_1);
-    // data would be added to Packet1 here
-    tstamp.twsec = twsec + t1;
-    outputStream.write(Packet1, tstamp);
+bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
+if (!outputStream) {
+    outputStream = dataShort_out->createStream(stream_id);
+    outputStream.blocking(true);
+}
+redhawk::buffer<short> Packet1(size_packet_1);
+// data would be added to Packet1 here
+tstamp.twsec = twsec + t1;
+outputStream.write(Packet1, tstamp);
 
-    redhawk::buffer<short> Packet2(size_packet_2);
-    // data would be added to Packet2 here
-    tstamp.twsec = twsec + t2;
-    outputStream.write(Packet2, tstamp);
+redhawk::buffer<short> Packet2(size_packet_2);
+// data would be added to Packet2 here
+tstamp.twsec = twsec + t2;
+outputStream.write(Packet2, tstamp);
 
-    redhawk::buffer<short> Packet3(size_packet_3);
-    // data would be added to Packet3 here
-    tstamp.twsec = twsec + t3;
-    outputStream.write(Packet3, tstamp);
+redhawk::buffer<short> Packet3(size_packet_3);
+// data would be added to Packet3 here
+tstamp.twsec = twsec + t3;
+outputStream.write(Packet3, tstamp);
 ```
 As shown above, the different packets are wqueued through the port's stream API, with the provided timestamp giving the transmitter transmission directions.
 BULK IO is also used when transmissions are to be sent over different frequencies.
@@ -410,38 +427,38 @@ The re-tuning instructions are inserted as keyword CHAN_RF in SRI updates, as se
 ![Multi-Frequency Transmission API](tx_burst_freq_seq.png)
 
 ```c++
-    std::string stream_id = "testStream";
-    unsigned int size_packet_1 = 1000;
-    unsigned int size_packet_2 = 500;
-    double t1 = 5;
-    double t2 = t1+5;
-    double f1 = 1e6;
-    double f2 = 2e6;
+std::string stream_id = "testStream";
+unsigned int size_packet_1 = 1000;
+unsigned int size_packet_2 = 500;
+double t1 = 5;
+double t2 = t1+5;
+double f1 = 1e6;
+double f2 = 2e6;
 
-    BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
-    double twsec = tstamp.twsec;
+BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
+double twsec = tstamp.twsec;
 
-    bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
-    if (!outputStream) {
-        outputStream = dataShort_out->createStream(stream_id);
-        outputStream.blocking(true);
-    }
+bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
+if (!outputStream) {
+    outputStream = dataShort_out->createStream(stream_id);
+    outputStream.blocking(true);
+}
 
-    redhawk::PropertyMap new_keywords;
+redhawk::PropertyMap new_keywords;
 
-    new_keywords["CHAN_RF"] = f1;
-    outputStream.keywords(new_keywords);
-    redhawk::buffer<short> Packet1(size_packet_1);
-    // data would be added to Packet1 here
-    tstamp.twsec = twsec + t1;
-    outputStream.write(Packet1, tstamp);
+new_keywords["CHAN_RF"] = f1;
+outputStream.keywords(new_keywords);
+redhawk::buffer<short> Packet1(size_packet_1);
+// data would be added to Packet1 here
+tstamp.twsec = twsec + t1;
+outputStream.write(Packet1, tstamp);
 
-    new_keywords["CHAN_RF"] = f2;
-    outputStream.keywords(new_keywords);
-    redhawk::buffer<short> Packet2(size_packet_2);
-    // data would be added to Packet2 here
-    tstamp.twsec = twsec + t2;
-    outputStream.write(Packet2, tstamp);
+new_keywords["CHAN_RF"] = f2;
+outputStream.keywords(new_keywords);
+redhawk::buffer<short> Packet2(size_packet_2);
+// data would be added to Packet2 here
+tstamp.twsec = twsec + t2;
+outputStream.write(Packet2, tstamp);
 ```
 
 Note that the stream id plays no role in the basic transmit API.
@@ -449,41 +466,41 @@ Stream id differentiation becomes important when different transmission prioriti
 To provide a stream id a particular priority, add the keyword FRONTEND::PRIORITY with value of type short with the stream's priority to the SRI keywords.
 
 ```c++
-    std::string stream_id = "testStream";
-    unsigned int size_packet_1 = 1000;
-    unsigned int size_packet_2 = 500;
-    double t1 = 5;
-    double t2 = t1+5;
-    double f1 = 1e6;
-    double f2 = 2e6;
-    short priority = 3;
+std::string stream_id = "testStream";
+unsigned int size_packet_1 = 1000;
+unsigned int size_packet_2 = 500;
+double t1 = 5;
+double t2 = t1+5;
+double f1 = 1e6;
+double f2 = 2e6;
+short priority = 3;
 
-    BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
-    double twsec = tstamp.twsec;
+BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
+double twsec = tstamp.twsec;
 
-    bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
-    if (!outputStream) {
-        outputStream = dataShort_out->createStream(stream_id);
-        outputStream.blocking(true);
-    }
+bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
+if (!outputStream) {
+    outputStream = dataShort_out->createStream(stream_id);
+    outputStream.blocking(true);
+}
 
-    redhawk::PropertyMap new_keywords;
+redhawk::PropertyMap new_keywords;
 
-    new_keywords["CHAN_RF"] = f1;
-    new_keywords["FRONTEND::PRIORITY"] = priority;
-    outputStream.keywords(new_keywords);
-    redhawk::buffer<short> Packet1(size_packet_1);
-    // data would be added to Packet1 here
-    tstamp.twsec = twsec + t1;
-    outputStream.write(Packet1, tstamp);
+new_keywords["CHAN_RF"] = f1;
+new_keywords["FRONTEND::PRIORITY"] = priority;
+outputStream.keywords(new_keywords);
+redhawk::buffer<short> Packet1(size_packet_1);
+// data would be added to Packet1 here
+tstamp.twsec = twsec + t1;
+outputStream.write(Packet1, tstamp);
 
-    new_keywords["CHAN_RF"] = f2;
-    // note that new_keywords still contains FRONTEND::PRIORITY
-    outputStream.keywords(new_keywords);
-    redhawk::buffer<short> Packet2(size_packet_2);
-    // data would be added to Packet2 here
-    tstamp.twsec = twsec + t2;
-    outputStream.write(Packet2, tstamp);
+new_keywords["CHAN_RF"] = f2;
+// note that new_keywords still contains FRONTEND::PRIORITY
+outputStream.keywords(new_keywords);
+redhawk::buffer<short> Packet2(size_packet_2);
+// data would be added to Packet2 here
+tstamp.twsec = twsec + t2;
+outputStream.write(Packet2, tstamp);
 ```
 
 When overlapping scheduled transmissions conflict, the transmission with the higher priority is transmitted.
@@ -498,29 +515,29 @@ To remove the ambiguity of the transmitted construct, the timestamp in subsequen
 Set the timestamp to invalid and both the whole (twsec) and fractional (tfsec) to 0, as shown below:
 
 ```c++
-    std::string stream_id = "testStream";
-    unsigned int size_packet_1 = 1000;
-    unsigned int size_packet_2 = 500;
+std::string stream_id = "testStream";
+unsigned int size_packet_1 = 1000;
+unsigned int size_packet_2 = 500;
 
-    BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
+BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
 
-    bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
-    if (!outputStream) {
-        outputStream = dataShort_out->createStream(stream_id);
-        outputStream.blocking(true);
-    }
+bulkio::OutShortStream outputStream = dataShort_out->getStream(stream_id);
+if (!outputStream) {
+    outputStream = dataShort_out->createStream(stream_id);
+    outputStream.blocking(true);
+}
 
-    redhawk::buffer<short> Burst1(size_packet_1);
-    // data would be added to Burst1 here
-    tstamp.twsec = tstamp.twsec + 5;
-    outputStream.write(Burst1, tstamp);
+redhawk::buffer<short> Burst1(size_packet_1);
+// data would be added to Burst1 here
+tstamp.twsec = tstamp.twsec + 5;
+outputStream.write(Burst1, tstamp);
 
-    redhawk::buffer<short> Burst2(size_packet_2);
-    // data would be added to Burst2 here
-    tstamp.tcstatus = BULKIO::TCS_INVALID;
-    tstamp.tfsec = 0;
-    tstamp.twsec = 0;
-    outputStream.write(Burst2, tstamp);
+redhawk::buffer<short> Burst2(size_packet_2);
+// data would be added to Burst2 here
+tstamp.tcstatus = BULKIO::TCS_INVALID;
+tstamp.tfsec = 0;
+tstamp.twsec = 0;
+outputStream.write(Burst2, tstamp);
 ```
 
 ### Feedback
@@ -533,51 +550,51 @@ The DUC's status port is named "transmitDeviceStatus_out" and uses the TransmitD
 The DeviceStatus interfaces is as follows:
 
 ```idl
-    module CF {
-        enum DeviceStatusCodeType {
-            DEV_OK,                             // device operating normally
-            DEV_UNDERFLOW,                      // not enough data to fill the needed time
-            DEV_OVERFLOW,                       // hardware cannot transmit the data at the rate requested
-            DEV_INSUFFICIENT_SETTLING_TIME,     // time difference between end of last transmit and new transmit with a tune is insufficient
-            DEV_MISSED_TRANSMIT_WINDOW,         // transmit could not begin at the requested time
-            DEV_INVALID_TRANSMIT_TIME_OVERLAP,  // the timestamp for the last sample in the previous packet is after the timestamp for the first sample in the current packet
-            DEV_INVALID_HARDWARE_STATE,         // hardware state is invalid (e.g.: configuration placed hardware in an invalid state)
-            DEV_HARDWARE_FAILURE                // general hardware failure
-        };
-
-        // generic device status
-        struct DeviceStatusType {
-            string                      allocation_id;
-            CF::UTCTime                 timestamp;
-            CF::DeviceStatusCodeType    status;         // device status
-            string                      message;        // status-specific message
-            CF::Properties              props;          // status-specific properties
-        };
-
-        interface DeviceStatus {
-            // triggers for status message: change in status
-            void statusChanged(in DeviceStatusType status);
-        };
+module CF {
+    enum DeviceStatusCodeType {
+        DEV_OK,                             // device operating normally
+        DEV_UNDERFLOW,                      // not enough data to fill the needed time
+        DEV_OVERFLOW,                       // hardware cannot transmit the data at the rate requested
+        DEV_INSUFFICIENT_SETTLING_TIME,     // time difference between end of last transmit and new transmit with a tune is insufficient
+        DEV_MISSED_TRANSMIT_WINDOW,         // transmit could not begin at the requested time
+        DEV_INVALID_TRANSMIT_TIME_OVERLAP,  // the timestamp for the last sample in the previous packet is after the timestamp for the first sample in the current packet
+        DEV_INVALID_HARDWARE_STATE,         // hardware state is invalid (e.g.: configuration placed hardware in an invalid state)
+        DEV_HARDWARE_FAILURE                // general hardware failure
     };
 
-    module FRONTEND {
-        struct TransmitStatusType {
-            string                      stream_id;
-            string                      allocation_id;
-            CF::UTCTime                 timestamp;
-            unsigned long long          total_samples;  // number of samples transmitted from this stream id; resets to 0 when >= max Ulonglong
-            unsigned long long          total_packets;  // number of packets transmitted (pushPacket calls) from this stream id; resets to 0 when >= max Ulonglong
-            boolean                     transmitting;   // true when currently transmitting, false when no queued data to transmit
-            CF::DeviceStatusCodeType    status;         // device status
-            double                      settling_time;  // this is the hardware's current re-tune settling time
-            unsigned long               queued_packets; // number of packets that are yet to be transmitted (current queue size)
-        };
-
-        interface TransmitDeviceStatus : CF::DeviceStatus {
-            // triggers for status message: change in status, change in transmitting, or queued_packets increases or becomes zero
-            void transmitStatusChanged(in TransmitStatusType status);
-        };
+    // generic device status
+    struct DeviceStatusType {
+        string                      allocation_id;
+        CF::UTCTime                 timestamp;
+        CF::DeviceStatusCodeType    status;         // device status
+        string                      message;        // status-specific message
+        CF::Properties              props;          // status-specific properties
     };
+
+    interface DeviceStatus {
+        // triggers for status message: change in status
+        void statusChanged(in DeviceStatusType status);
+    };
+};
+
+module FRONTEND {
+    struct TransmitStatusType {
+        string                      stream_id;
+        string                      allocation_id;
+        CF::UTCTime                 timestamp;
+        unsigned long long          total_samples;  // number of samples transmitted from this stream id; resets to 0 when >= max Ulonglong
+        unsigned long long          total_packets;  // number of packets transmitted (pushPacket calls) from this stream id; resets to 0 when >= max Ulonglong
+        boolean                     transmitting;   // true when currently transmitting, false when no queued data to transmit
+        CF::DeviceStatusCodeType    status;         // device status
+        double                      settling_time;  // this is the hardware's current re-tune settling time
+        unsigned long               queued_packets; // number of packets that are yet to be transmitted (current queue size)
+    };
+
+    interface TransmitDeviceStatus : CF::DeviceStatus {
+        // triggers for status message: change in status, change in transmitting, or queued_packets increases or becomes zero
+        void transmitStatusChanged(in TransmitStatusType status);
+    };
+};
 ```
 
 Control of the transmitter, beyond that afforded by timestamps and keywords in BULK IO, is concerned with error recovery.
@@ -585,33 +602,33 @@ For example, in some CONOPs it may be required to have a well-defined strict sch
 The definition of the response to error states is control through the TransmitControl interface, which in turn inherits from the DigitalTuner interface:
 
 ```idl
-    interface TransmitControl : DigitalTuner {
-        struct TransmitParameters {
-            string  stream_id;          // if empty string, then applies to all streams
-            boolean ignore_timestamp;   // set to true for continuous data. Insufficient data will cause an DEV_UNDERFLOW error
-            boolean ignore_error;       // set to true to ignore error states and just transmit
-            double  tx_power;           // -1 for don't care
-            double  max_timing_error;   // how much deviation (over/under) before DEV_MISSED_TRANSMIT_WINDOW is set as the error code; -1 for don't care
-            // time for the packet transmission is the bulk io timestamp, unless ignore_timestamp is true; then data is sent as soon as it is available
-            // center frequency for the packet transmission is CHAN_RF keyword in SRI
-            // duration of the packet is the length of the packet * the sampling period (in SRI)
-        };
-
-        // reset allocation(s):
-        //    - remove error codes
-        //    - empty the transmit queue
-        //    - reset total_samples count
-        //    - reset total_packets count
-        // if stream_id == "", the reset applies to all streams
-        void reset(in string stream_id)
-            raises (FRONTEND::FrontendException);
-
-        void setTransmitParameters(in TransmitParameters transmit_parameters)
-            raises (FRONTEND::FrontendException, FRONTEND::BadParameterException);
-
-        TransmitParameters getTransmitParameters()
-            raises (FRONTEND::FrontendException);
+interface TransmitControl : DigitalTuner {
+    struct TransmitParameters {
+        string  stream_id;          // if empty string, then applies to all streams
+        boolean ignore_timestamp;   // set to true for continuous data. Insufficient data will cause an DEV_UNDERFLOW error
+        boolean ignore_error;       // set to true to ignore error states and just transmit
+        double  tx_power;           // -1 for don't care
+        double  max_timing_error;   // how much deviation (over/under) before DEV_MISSED_TRANSMIT_WINDOW is set as the error code; -1 for don't care
+        // time for the packet transmission is the bulk io timestamp, unless ignore_timestamp is true; then data is sent as soon as it is available
+        // center frequency for the packet transmission is CHAN_RF keyword in SRI
+        // duration of the packet is the length of the packet * the sampling period (in SRI)
     };
+
+    // reset allocation(s):
+    //    - remove error codes
+    //    - empty the transmit queue
+    //    - reset total_samples count
+    //    - reset total_packets count
+    // if stream_id == "", the reset applies to all streams
+    void reset(in string stream_id)
+        raises (FRONTEND::FrontendException);
+
+    void setTransmitParameters(in TransmitParameters transmit_parameters)
+        raises (FRONTEND::FrontendException, FRONTEND::BadParameterException);
+
+    TransmitParameters getTransmitParameters()
+        raises (FRONTEND::FrontendException);
+};
 ```
 
 Note that the allocation id is not an argument for these function calls.
