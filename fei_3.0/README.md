@@ -221,6 +221,11 @@ For example, in the case where the configuration of the underlying RF hardware i
 As seen in the example above, the underlying hardware is a transceiver with two receive channels and one transmit channel.
 Each devices is quasi-independent, sharing some common device control functionality, but each subsystem operating in a semi-independent fashion.
 
+Note: the parent device (WB Transceiver and Channelizer) is not an FEI device.
+This device is a custom device that aggregates the underlying devices; in this case RX_DIGITIZER, RDC, and TDC.
+The parent device delegates the allocations to the child devices and can promote either ports or properties of the different child devices.
+Because allocations are returned with a reference to the child device satisfying the allocation (more on this in the next section), the parent device can be a custom device provided for convenience.
+
 ## Allocations with feedback
 ---
 
