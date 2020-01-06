@@ -660,6 +660,14 @@ The first timestamp provides a start cue.
 Subsequent timestamps are ignored.
 If any gaps appear on the stream, where data is not available when it is needed, a DEV_UNDERFLOW is triggered.
 
+### Transmit Arrays
+
+Much like receivers, transmitters can be associated as arrays.
+The association of coherent devices is performed with the TX_ARRAY device.
+Much like RX_ARRAY, allocations of coherent transmit channels is by providing TX_ARRAY with the allocation property FRONTEND::coherent_feeds.
+
+Calling allocate() on the TX_ARRAY device with FRONTEND::coherent_feeds is a sequence of the TDC devices that satisfied the request.
+
 ### Feedback
 
 Feedback from the device is sent through the TDC's status port, as seen in the following figure:
