@@ -220,6 +220,7 @@ For example, in the case where the configuration of the underlying RF hardware i
 
 As seen in the example above, the underlying hardware is a transceiver with two receive channels and one transmit channel.
 Each devices is quasi-independent, sharing some common device control functionality, but each subsystem operating in a semi-independent fashion.
+Also notice that because the RDC share a single receiver, they need a common RX_DIGITIZER, while the TDC does not require a TX device because there is only one TDC.
 
 Note: the parent device (WB Transceiver and Channelizer) is not an FEI device.
 This device is a custom device that aggregates the underlying devices; in this case RX_DIGITIZER, RDC, and TDC.
