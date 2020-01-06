@@ -10,13 +10,17 @@ The set of FEI devices is:
 - RDC (Receive Digital Channel)
 - TDC (Transmit Digital Channel)
 
+The following sections describe each device type in detail.
+The provided table describes the ports that are expected in each device type.
+The last column refers to a new allocation call that REDHAWK devices support that provides the caller with feedback; more on this later.
+
 ### RX
 
 The RX device is an analog receiver.
 
 Minimum ports:
 
-| Type | name | purpose | direction | description | return by allocate()
+| Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
 | RFINFO | RFINFO_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
 | RFINFO | RFINFO_out | data | uses (output) | RF information from the device to follow-on digitizers | No
@@ -28,7 +32,7 @@ An RX device with a wideband digitized feed
 
 Minimum ports:
 
-| Type | name | purpose | direction | description | return by allocate()
+| Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
 | RFINFO | RFINFO_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
 | RFINFO | RFINFO_out | data | uses (output) | RF information from the device to follow-on digitizers | No
@@ -41,7 +45,7 @@ A device that aggregates multiple coherent receivers (RX or RX_DIGITIZER)
 
 Minimum ports:
 
-| Type | name | purpose | direction | description | return by allocate()
+| Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 
@@ -51,7 +55,7 @@ The TX device is an analog receiver.
 
 Minimum ports:
 
-| Type | name | purpose | direction | description | return by allocate()
+| Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
 | RFINFO | RFINFO_in | data | provides (input) | RF information from the processing flow | No
 | RFINFO | RFINFO_out | data | uses (output) | RF information for the antenna | No
@@ -63,7 +67,7 @@ A device that aggregates multiple coherent transmitters (TX)
 
 Minimum ports:
 
-| Type | name | purpose | direction | description | return by allocate()
+| Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
 | AnalogTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 
@@ -73,7 +77,7 @@ RDC is a single received digitized physical channel; this is a channel that is a
 
 Minimum ports:
 
-| Type | name | purpose | direction | description | return by allocate()
+| Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
 | RFINFO | RFINFO_in | data | provides (input) | RF information from the RX or RX_DIGITIZER (flow-through from the antenna), such as rf_flow_id | No
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
@@ -87,7 +91,7 @@ TDC is a single transmit digitized physical channel.
 
 Minimum ports:
 
-| Type | name | purpose | direction | description | return by allocate()
+| Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
 | RFINFO | RFINFO_out | data | uses (output) | RF information for the TX (flow-through to the antenna), such as rf_flow_id | No
 | TransmitControl | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
@@ -666,7 +670,7 @@ Much like receivers, transmitters can be associated as arrays.
 The association of coherent devices is performed with the TX_ARRAY device.
 Much like RX_ARRAY, allocations of coherent transmit channels is by providing TX_ARRAY with the allocation property FRONTEND::coherent_feeds.
 
-Calling allocate() on the TX_ARRAY device with FRONTEND::coherent_feeds is a sequence of the TDC devices that satisfied the request.
+Calling `allocate()` on the TX_ARRAY device with FRONTEND::coherent_feeds is a sequence of the TDC devices that satisfied the request.
 
 ### Feedback
 
@@ -787,16 +791,16 @@ If ignore_error is set to true and an error condition occurs, such as an DEV_OVE
 
 ### Quick Response
 
-In cases where a response to a particular event is required quickly, it may not be feasible to build the transmission (multiple pushPacket and pushSRI) in the time allowed.
+In cases where a response to a particular event is required quickly, it may not be feasible to build the transmission (multiple `pushPacket` and `pushSRI`) in the time allowed.
 For these cases, the transmit API allows the creation of a response and queue it in the device.
 When the time to transmit is identified, a single call can be used to trigger the event.
 
-To build a transmit queue, use the hold() method to hold a particular stream id.
+To build a transmit queue, use the `hold()` method to hold a particular stream id.
 The return value of the hold method is a boolean describing whether or not the transmitter is aware that the stream id exists.
 A return value of false means that the device has yet to see the stream id.
 Irrespective of the return value, any arriving data associated with this stream id is queued.
 
-To trigger a transmission, call allow() with the argument set to the selected stream id.
+To trigger a transmission, call `allow()` with the argument set to the selected stream id.
 The transmit queue for this stream is emptied as described in the following list:
 - If the transmitter is set with ignore_timestamp as true:
   - The data will be transmitted as soon allow() is invoked for that stream id.
@@ -808,6 +812,8 @@ The transmit queue for this stream is emptied as described in the following list
     - If subsequent packets have tfsec=twsec=0, they are transmitted in the order in which they were received without delay between packets.
       - Delays may occur if the transmitter needs to pause because of events like changing the transmit frequency or transmit bandwidth
     - If subsequent packets have non-zero tfsec or twsec, the timestamp value is how long each of these subsequent packets need to be delayed with respect to the initial transmitted packet.
+
+To retrieve the list of streams that are on hold, call the `held()` method.
 
 ### Error States
 
