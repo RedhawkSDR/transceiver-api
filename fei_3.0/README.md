@@ -1,4 +1,100 @@
 
+## Device Types
+
+The set of FEI devices is:
+- RX
+- RX_DIGITIZER
+- RX_ARRAY
+- TX
+- TX_ARRAY
+- RDC (Receive Digital Channel)
+- TDC (Transmit Digital Channel)
+
+### RX
+
+The RX device is an analog receiver.
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | return by allocate()
+| --- | --- | --- | --- | --- | ---
+| RFINFO | RFINFO_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
+| RFINFO | RFINFO_out | data | uses (output) | RF information from the device to follow-on digitizers | No
+| AnalogTuner or AnalogScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+
+### RX_DIGITIZER
+
+An RX device with a wideband digitized feed
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | return by allocate()
+| --- | --- | --- | --- | --- | ---
+| RFINFO | RFINFO_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
+| RFINFO | RFINFO_out | data | uses (output) | RF information from the device to follow-on digitizers | No
+| DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+| Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Instance-specific wideband data feed. This is typically the whole RF bandwidth seen by the receiver; either time-based or frequency-based. Data could be continuous or snapshots. | Yes
+
+### RX_ARRAY
+
+A device that aggregates multiple coherent receivers (RX or RX_DIGITIZER)
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | return by allocate()
+| --- | --- | --- | --- | --- | ---
+| DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+
+### TX
+
+The TX device is an analog receiver.
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | return by allocate()
+| --- | --- | --- | --- | --- | ---
+| RFINFO | RFINFO_in | data | provides (input) | RF information from the processing flow | No
+| RFINFO | RFINFO_out | data | uses (output) | RF information for the antenna | No
+| AnalogTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+
+### TX_ARRAY
+
+A device that aggregates multiple coherent transmitters (TX)
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | return by allocate()
+| --- | --- | --- | --- | --- | ---
+| AnalogTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+
+### RDC (Receive Digital Channel)
+
+RDC is a single received digitized physical channel; this is a channel that is adequate for processing.
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | return by allocate()
+| --- | --- | --- | --- | --- | ---
+| RFINFO | RFINFO_in | data | provides (input) | RF information from the RX or RX_DIGITIZER (flow-through from the antenna), such as rf_flow_id | No
+| DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+| Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Digital data feed | Yes
+
+Note: If a system has a single RDC and the RX stage does not have a wideband digitized feed, then there is an implied RX stage, and the RDC can be connected directly to the antenna.
+
+### TDC (Transmit Digital Channel)
+
+TDC is a single transmit digitized physical channel.
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | return by allocate()
+| --- | --- | --- | --- | --- | ---
+| RFINFO | RFINFO_out | data | uses (output) | RF information for the TX (flow-through to the antenna), such as rf_flow_id | No
+| TransmitControl | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+| Bulk IO | <&nbsp;any&nbsp;> | data | provides (input) | Digital data feed to be transmitted | Yes
+
+Note: If a system has a single TDC, then there is an implied TX stage, and the TDC can be connected directly to the antenna.
+
 ## Multi-Channel Frontend Devices
 
 Multi-channel devices provide a single point where different, often independent, RF devices operate.
