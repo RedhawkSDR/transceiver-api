@@ -34,7 +34,7 @@ they only work with interfaces listed above.
 This section only discusses the 4 facilities of a UHD _stream_ listed above and
 does not seek to address the hardware command and control interfaces.
 
-### streamer_args_t
+### stream_args_t
 Configures a data path between the device and the user.  This facility is
 primarily intended to provide automatic data conversion between the native
 device format and the user desired/required format.
@@ -155,10 +155,10 @@ At the lowest level, the UHD driver assigns a sequence number to each packet
 that it sends to a device and looks for an ACK for each sequence number.  If it
 does not get one, the stream adds an `async_metadata_t` message to a queue, that
 appears to be 1000 messages deep, to indicate what failure occurred.  The
-message structure is show below.  We anticipate adding a MessageEvent port with
+message structure is shown below.  We anticipate adding a MessageEvent port with
 a message definition that is structured similar to the below and would be
 unambiguously associated with either a BULKIO stream or some sort of unique
-transation id.
+transaction id.
 
 ``` C++
     /*!
