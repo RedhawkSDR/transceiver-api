@@ -1,4 +1,4 @@
-# USRP Tranmist CONOP
+# USRP Transmit CONOP
 The user wishes to transmit a single stream of data with the following
 characteristics.
 
@@ -12,7 +12,9 @@ most simply as a Digital Up Convertor (DUC) and then sends data to it that shoul
 be transmitted at a specific time.
 
 ## Design Goals
-This is the simplest transmit case and can be accomodated using the
+This is the simplest transmit case and can be accomodated using the `TX` tuner
+allocation of a single stream with a timestamp for when the transmit operation
+should occur.
 
 ## Overview of Order of Operations
 1. Allocate a DUC on an FEI device.
@@ -27,10 +29,10 @@ this document enumerates how a single stream of data can be transmitted using
 the existing APIs.  In working through this simple case we identify deficiencies
 of the existing API that must be addressed for more complex transmit CONOPs.
 
-1. Allocate a TX tuner (_the conceptual DUC_) with the values you intend mapped to a
-`frontend_tuner_allocation_struct`.  For the simplest transmit use case, this
-should be sufficient configuration to be able to just send data with timestamps
-to the tuner.
+1. Allocate a TX tuner (_the conceptual DUC_) with the values you intend to
+map to a `frontend_tuner_allocation_struct`.  For the simplest transmit use
+case, this should be sufficient configuration to be able to just send data
+with timestamps to the tuner.
 
 2. Create a *stream* to push data to the allocated tuner (as shown below).
 
@@ -54,12 +56,12 @@ to the tuner.
        delivered in time to make it contiguous with the previous `stream.write()`.
        This suggests a buffer **underrun** error.
 
-    b. if the timestamp is non-zero, disable any buffer underrun logic, wait till
+    b. if the timestamp is non-zero, disable any buffer underrun logic, wait until
        the requested time to transmit the data.
 
 4.  If data is pushed to the device **faster** than it can buffer and transmit the data
     a buffer **overrun** error should occur.  If the data is pushed to the device
-    **slower** than is required to prevent a `xdelta` gap in the transmitted
+    **slower** than is required to prevent an `xdelta` gap in the transmitted
     waveform a buffer **underrun** should occur.
 
 
@@ -92,28 +94,26 @@ timestamp for each successive call (painful) or we have to accept a zero-ized
 timestamp as an indication that we just want the data pushed out and are
 expecting it to be contiguous with the last `pushPacket` call.
 
- ### Data Sample Rate
+### Data Sample Rate
 The `stream.xdelta` should not *control* the output sample rate, but should only
-indicate what the sample rate of the data stream is.  The actual DAC sample rate
+indicate what the sample rate of the data stream is.  The actual DAC/DUC sample rate
 **shall** be set by the initial tuner allocation call using the
 `frontend_tuner_allocation_struct`.
 
 Removing the above requirement allows the `pushSRI` and `pushPacket` calls to
 *control* the transmit frequency, bandwidth, and sample rate of the data.  Each
 change of the SRI, shown below for convenience, would still require a **new**
-stream since we have no way of pushing and EOS.
+stream since we have no way of pushing an EOS.
 
-
-
-The device must be
-responsible for either resampling the data to
 There are two conditions that are worth considering regarding the sample rate
 specified by `xdelta`.
 
-1.  The DAC (or some resampler) on the device may not be able to achieve the exact
+1.  The DAC/DUC (or some resampler) on the device may not be able to achieve the exact
  sample rate requested.  For this simple case, the user must request the desired
  sample rate during allocation and then check the device's achieved sample rate
  using the `frontend_tuner_status` structure.
+
+2.  <this use case lost during editing>
 
 
 ### Stream API
