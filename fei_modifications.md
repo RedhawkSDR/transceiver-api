@@ -78,7 +78,7 @@ order for the device to associate a connection with a tuner, the `allocation_id`
 associated with the tuner must be provided via the `streamID`.  This has been a
 challenge for many applications.  To alleviate this problem, it is recommended
 that the `StreamSRI` definition be augmented to include the `allocation_id` (for
-purposes of this discussion, `alloation_id` and `listener_allocation_id` are
+purposes of this discussion, `allocation_id` and `listener_allocation_id` are
 synonymous).
 
 ---
@@ -102,7 +102,7 @@ the `streamID`, then devices could be required to provide a fall-back mode:
 
 ### Proposal 1 : Modify the IDL Definition of `StreamSRI`
 Modify the `struct StreamSRI` definition in
-`bulkioInterfaces/idl/ossie/BULKIO/bulkioDataTypes.idl` to inlcude a field to
+`bulkioInterfaces/idl/ossie/BULKIO/bulkioDataTypes.idl` to include a field to
 indicate the allocation_id associated with this stream.
 
 Example:
@@ -132,7 +132,8 @@ struct StreamSRI {
 
 #### Cons : Modify the IDL Definition of `StreamSRI`
 
-* Introduces a _required_ keyword that is not relevant for all BULKIO conections that are **not** to devices.
+* Introduces a _required_ keyword that is not relevant for all BULKIO
+connections that are **not** to devices.
 
 ### Proposal 2 : Insert a Well-Known Keyword in the `StreamSRI.keywords`
 Modify the `struct StreamSRI` definition in
@@ -169,13 +170,13 @@ flow-chain from data source to data sink.  The more natural discovery challenge
 is from data sink to data source.  There is no easy way to traverse a data flow
 from sink to source.  To alleviate this problem, the 'uses' port reference could
 be a mandatory field in the `StreamSRI`.  As before, this could also be done
-through a keyword, but keywords are implicitely optional.  A _required_ field
+through a keyword, but keywords are implicitly optional.  A _required_ field
 like this should be part of the IDL definition of the structure.
 
-_**Note:** the `NegotiablePort` patten used for shared memory and Vita49
+_**Note:** the `NegotiablePort` pattern used for shared memory and Vita49
 transport may be a better means of implementing this functionality.  An
 application (component) developer isn't necessarily interested in the upstream
-port reference and therefore shouldn't have to bothered with it.  Additionally,
+port reference and therefore shouldn't have to be bothered with it.  Additionally,
 it should not be presented in a way that allows modification by the user.  The
 `NegotiablePort` construct seems to provide a means of conveying the information
 and making it available via an API without any of the possible risks of using a
@@ -185,13 +186,13 @@ field in the `StreamSRI`, whether required structure member or keyword._
 A quick review of the BULKIO source will reveal that there are absolutely no
 error responses and that most exceptions are swallowed after logging a,
 hopefully informative, message.  Given the rest of the proposed design approach,
-we are therfore denied a means of getting status on transmit operations, or any
+we are therefore denied a means of getting status on transmit operations, or any
 other device interaction that results from a BULKIO transaction, without some
 further mechanism.
 
 No matter what approach is effected this modification will result in valuable
 error responses that will help application developers and system developers
-diagnose and resond to error conditions in the system.
+diagnose and respond to error conditions in the system.
 
 ### Proposal 1 : MessageEvent Port
 REDHAWK already maintains a definition of a `MessageEvent` port which works both
@@ -223,7 +224,7 @@ A `MessageEvent` port would allow the definition of a status message as follows:
 ```
 
 _**Note:** Some thought was given to adding the radio settings to this status
-message, but that information is already being emmitted through the property
+message, but that information is already being emitted through the property
 change events.  Does it need to be here too?_
 
 There can be multiple status messages as well; for instance, one for each of the
@@ -333,7 +334,7 @@ struct FrontendDeviceStatusCustomEventType {
 
 #### Cons : Custom IDL Device Status Port
 * Custom port type that an application or system service would have to implement
-* in order to make use of.
+in order to make use of.
 
 ## Allocation for Multi-channel Transmit (or Receive)
 There are several scenarios that suggest that a _multi-channnel_ allocation
@@ -341,7 +342,7 @@ should be supported
 
 | **Scenario**             | **Description**                                                                                                                       |
 |:------------------------ |:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tx Beamforming  | A transmit CONOP that requires the allocation of _N_ phase coherent channels. Data should be pushed to the group of channels with the exact same timing metadata and then phase and gain adjusted for each element by the hardware in order to affect a beam. Summary: 1 `bulkio` connection feeds _N_ transmit tuners.  A `DigitalTuner` cont |
+| Tx Beamforming  | A transmit CONOP that requires the allocation of _N_ phase coherent channels. Data should be pushed to the group of channels with the exact same timing metadata and then phase and gain adjusted for each element by the hardware in order to affect a beam. Summary: 1 `bulkio` connection feeds _N_ transmit tuners. |
 | Rx Beamforming       | A receive CONOP that requires the allocation of _N_ coherent tuners that are able to receive data on the same frequency.  Summary: 1 allocation, _N_ `bulkio` channels each with time stamp and metadata information for the respective channels    |
 | UHD-like  | The UHD library supports n-channel transmit.  We have been asked to create a Tx ability on par with the UHD. |
 
@@ -366,24 +367,24 @@ The `allocation_id` can be used by the normal `DigitalTuner` control port
 methods to control the gain, centerfrequency, samplerate, bandwidth and
 tolerances of the entire array.
 
-Each `fta` (frontent_tuner_allocation_struct) should set the `device_control`
+Each `ftas` (frontent_tuner_allocation_struct) should set the `device_control`
 member to **true** and provide a   valid `allocation_id`.  Each member of the
 array can use its `allocation_id` to get status and provide any custom
 configuration of _array weights_ (or other element specific configuration).
 
-There are really only two allocation use-cases for an array.
-1.  Use the `frontend_array_allocation_struct` with `rf_flow_id` empty in each
-of the `array_tuners`.  This should cause the device to allocate any two
-**coherent** channels.  Note: there is no point in using this entry point i fyo
-u don't want coherent channels; use the normal
-`frontend_tuner_allocation_struct`.  The device should either return all
-antennas in the available array or return a _contiguous_ subset of the array.
-E.g. If an array has elements (1, 2, 3, 4), but the user allocations only 3
-tuners, the device should return (1, 2, 3) or (2, 3, 4), not (1, 3, 4).
+There are really only two allocation use-cases for an array.  1.  Use the
+`frontend_array_allocation_struct` with `rf_flow_id` empty in each of the
+`array_tuners`.  This should cause the device to allocate any two **coherent**
+channels.  Note: there is no point in using this entry point if you don't want
+coherent channels; use the normal `frontend_tuner_allocation_struct`.  The
+device should either return all antennas in the available array or return a
+_contiguous_ subset of the array.  E.g. If an array has elements (1, 2, 3, 4),
+but the user allocates only 3 tuners, the device should return (1, 2, 3) or
+(2, 3, 4), not (1, 3, 4).
 
 2.  Use the `frontend_array_allocation_struct` with the `rf_flow_id` of each
 `array_tuners` member filled in to select the desired antenna/tuner.  In this
-canse the device should return exactly the tuners requested if they are able to
+case the device should return exactly the tuners requested if they are able to
 be allocated.
 
 
@@ -475,7 +476,7 @@ There are several challenges in providing only these two methods of control.
   2. While all _radio_ settings can be changed using the `AnalogTuner` and
   `DigitalTuner` interfaces, each change may incur additional settling time.
   Since the radio settings must be changed individually using these interfaces,
-  the overrall time to update the radio may be at least 4 times the settling
+  the overall time to update the radio may be at least 4 times the settling
   time.
   3. Stakeholders have reported scenarios with certain devices where the order
   in which the _radio_ settings are changed becomes important.  While the device
