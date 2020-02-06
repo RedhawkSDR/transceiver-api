@@ -108,10 +108,10 @@ to push data to a single transmitter._
 
 The existing BULKIO (and BURSTIO) APIs are identified and discussed in the
 context of how they may or may not support transmit CONOPs.  We begin with a
-discussion of the low level BULKIO interfaces that are implemented in IDL;
+discussion of the low level BULKIO interfaces that are implemented in IDL:
 `pushPacket()` and `pushSRI()`.
 
-The REDHAWK Core Framework team recommends that developer's not use the
+The REDHAWK Core Framework team recommends that developers not use the
 low-level IDL interface but employ the _streamAPI_ instead.  This API consists
 largely of the `InputStream` and `OutputStream`.  Since we are primarily
 interested in transmit, we will only review the `OutputStream`.
@@ -127,13 +127,13 @@ interested in transmit, we will only review the `OutputStream`.
 ```
 
 The `pushPacket` functionality has been mapped onto a _stream_ since the REDHAWK
-2.0 LTS.  Now, `streamID` is inherint to the _stream_ object that a user creates.
+2.0 LTS.  Now, `streamID` is inherent to the _stream_ object that a user creates.
 `EOS` is sent when `close()` is called on the stream.  The `write()` method of a
 stream takes the data buffer to be sent and the timestamp to send the data at.
 
 ### Observations : `pushPacket`
 
-* The `PrecisionUTCTime` attibute allows the data to be _scheduled_ at a precise
+* The `PrecisionUTCTime` attribute allows the data to be _scheduled_ at a precise
   instant in time.
 
 * A `PrecisionUTCTime` attribute equal to "0" should indicate that the data is
@@ -227,7 +227,7 @@ same lack of results response.
 ## API : `OutputStream`
 
 _Streams_ are ultimately an encapsulation of the `pushPacket` and `pushSRI` APIs
-that enforces behavior for simplified development.  There are some important
+that enforce behavior for simplified development.  There are some important
 concepts associated with streams that are overviewed below.
 
 * Each stream is associated with a `streamID`.  The `streamID` uniquely
@@ -255,7 +255,7 @@ component wishing to connect to a device during the connection process as the
 `connectionId`.  This allows the 'uses' port to use the `connectionId` as the
 'streamID' for its SRI.  In this way, when the component begins to send SRI and
 data, the device is able to correlate the `streamID` to whichever tuner was
-allocated for this data.  This is particular necessary for multi-input ports on
+allocated for this data.  This is particularly necessary for multi-input ports on
 FEI devices.  Every component sending data to the device uses a single port.
 Some mapping is required to direct data from a particular connection to the
 correct tuner or tuners.
