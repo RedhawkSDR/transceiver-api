@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE softpkg PUBLIC "-//JTRS//DTD SCA V2.2.2 SPD//EN" "softpkg.dtd">
+<softpkg id="DCE:6aa85696-88b7-44cb-a08d-6ef45133f25b" name="USRP" type="2.2.5">
+  <title></title>
+  <author>
+    <name>null</name>
+  </author>
+  <propertyfile type="PRF">
+    <localfile name="USRP.prf.xml"/>
+  </propertyfile>
+  <descriptor>
+    <localfile name="USRP.scd.xml"/>
+  </descriptor>
+  <implementation id="cpp">
+    <description>The implementation contains descriptive information about the template for a software resource.</description>
+    <code type="Executable">
+      <localfile name="cpp/USRP"/>
+      <entrypoint>cpp/USRP</entrypoint>
+    </code>
+    <compiler name="/usr/bin/gcc" version="4.4.7"/>
+    <programminglanguage name="C++"/>
+    <humanlanguage name="EN"/>
+    <os name="Linux"/>
+    <processor name="x86"/>
+    <processor name="x86_64"/>
+  </implementation>
+  <child name="RDC">
+    <childPropertyFile>
+        <localfile name="RDC.prf.xml"/>
+    </childPropertyFile>
+    <childDescriptorFile>
+        <localfile name="RDC.scd.xml"/>
+    </childDescriptorFile>
+  </child>
+  <child name="RDC_SDDS">
+    <childPropertyFile>
+        <localfile name="RDC_SDDS.prf.xml"/>
+    </childPropertyFile>
+    <childDescriptorFile>
+        <localfile name="RDC_SDDS.scd.xml"/>
+    </childDescriptorFile>
+  </child>
+  <child name="TDC">
+    <childPropertyFile>
+        <localfile name="TDC.prf.xml"/>
+    </childPropertyFile>
+    <childDescriptorFile>
+        <localfile name="TDC.scd.xml"/>
+    </childDescriptorFile>
+  </child>
+</softpkg>
