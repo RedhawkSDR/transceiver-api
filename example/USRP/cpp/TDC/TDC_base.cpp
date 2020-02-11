@@ -124,7 +124,7 @@ void TDC_base::loadProperties()
                 "allocation");
 
     addProperty(frontend_transmitter_allocation,
-                frontend_transmitter_allocation_struct(),
+                frontend::frontend_transmitter_allocation_struct(),
                 "FRONTEND::transmitter_allocation",
                 "frontend_transmitter_allocation",
                 "writeonly",
