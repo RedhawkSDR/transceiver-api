@@ -55,6 +55,8 @@ class RDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_stru
         frontend::InDigitalTunerPort *DigitalTuner_in;
         /// Port: dataShort_out
         bulkio::OutShortPort *dataShort_out;
+        /// Port: dataSDDS_out
+        bulkio::OutSDDSPort *dataSDDS_out;
 
         std::map<std::string, std::string> listeners;
 

@@ -46,6 +46,8 @@ RDC_base::~RDC_base()
     DigitalTuner_in = 0;
     dataShort_out->_remove_ref();
     dataShort_out = 0;
+    dataSDDS_out->_remove_ref();
+    dataSDDS_out = 0;
 }
 
 void RDC_base::construct()
@@ -61,6 +63,9 @@ void RDC_base::construct()
     dataShort_out = new bulkio::OutShortPort("dataShort_out");
     dataShort_out->setLogger(this->_baseLog->getChildLogger("dataShort_out", "ports"));
     addPort("dataShort_out", dataShort_out);
+    dataSDDS_out = new bulkio::OutSDDSPort("dataSDDS_out");
+    dataSDDS_out->setLogger(this->_baseLog->getChildLogger("dataSDDS_out", "ports"));
+    addPort("dataSDDS_out", dataSDDS_out);
     this->setHost(this);
 
 }

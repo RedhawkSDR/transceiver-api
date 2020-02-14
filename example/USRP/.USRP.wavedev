@@ -5,9 +5,6 @@
     <child name="RDC">
         <childvalue template="redhawk.codegen.jinja.cpp.component.frontend" generatorId="gov.redhawk.ide.codegen.jinja.cplusplus.CplusplusGenerator"/>
     </child>
-    <child name="RDC_SDDS">
-        <childvalue template="redhawk.codegen.jinja.cpp.component.frontend" generatorId="gov.redhawk.ide.codegen.jinja.cplusplus.CplusplusGenerator"/>
-    </child>
     <child name="TDC">
         <childvalue template="redhawk.codegen.jinja.cpp.component.frontend" generatorId="gov.redhawk.ide.codegen.jinja.cplusplus.CplusplusGenerator"/>
     </child>

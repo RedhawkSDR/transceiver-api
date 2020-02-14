@@ -32,14 +32,6 @@
         <localfile name="RDC.scd.xml"/>
     </childDescriptorFile>
   </child>
-  <child name="RDC_SDDS">
-    <childPropertyFile>
-        <localfile name="RDC_SDDS.prf.xml"/>
-    </childPropertyFile>
-    <childDescriptorFile>
-        <localfile name="RDC_SDDS.scd.xml"/>
-    </childDescriptorFile>
-  </child>
   <child name="TDC">
     <childPropertyFile>
         <localfile name="TDC.prf.xml"/>

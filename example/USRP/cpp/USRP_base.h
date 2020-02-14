@@ -11,7 +11,6 @@
 #include <frontend/frontend.h>
 #include "struct_props.h"
 #include "TDC/TDC.h"
-#include "RDC_SDDS/RDC_SDDS.h"
 #include "RDC/RDC.h"
 
 #define BOOL_VALUE_HERE 0
