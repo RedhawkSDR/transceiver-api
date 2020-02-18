@@ -54,7 +54,7 @@ void RDC_i::constructor()
      The incoming request for tuning contains a string describing the requested tuner
      type. The string for the request must match the string in the tuner status.
     ***********************************************************************************/
-    this->addChannels(1, "RX_DIGITIZER");
+    this->addChannels(1, "RDC");
 }
 
 /***********************************************************************************************
@@ -323,7 +323,7 @@ void RDC_i::deviceEnable(frontend_tuner_status_struct_struct &fts, size_t tuner_
     modify fts, which corresponds to this->frontend_tuner_status[tuner_id]
     Make sure to set the 'enabled' member of fts to indicate that tuner as enabled
     ************************************************************/
-    #warning deviceEnable(): Enable the given tuner  *********
+    //#warning deviceEnable(): Enable the given tuner  *********
     fts.enabled = true;
     return;
 }
@@ -332,7 +332,7 @@ void RDC_i::deviceDisable(frontend_tuner_status_struct_struct &fts, size_t tuner
     modify fts, which corresponds to this->frontend_tuner_status[tuner_id]
     Make sure to reset the 'enabled' member of fts to indicate that tuner as disabled
     ************************************************************/
-    #warning deviceDisable(): Disable the given tuner  *********
+    //#warning deviceDisable(): Disable the given tuner  *********
     fts.enabled = false;
     return;
 }
@@ -347,7 +347,7 @@ bool RDC_i::deviceSetTuning(const frontend::frontend_tuner_allocation_struct &re
 
     return true if the tuning succeeded, and false if it failed
     ************************************************************/
-    #warning deviceSetTuning(): Evaluate whether or not a tuner is added  *********
+    //#warning deviceSetTuning(): Evaluate whether or not a tuner is added  *********
     return true;
 }
 bool RDC_i::deviceDeleteTuning(frontend_tuner_status_struct_struct &fts, size_t tuner_id) {
@@ -355,7 +355,7 @@ bool RDC_i::deviceDeleteTuning(frontend_tuner_status_struct_struct &fts, size_t 
     modify fts, which corresponds to this->frontend_tuner_status[tuner_id]
     return true if the tune deletion succeeded, and false if it failed
     ************************************************************/
-    #warning deviceDeleteTuning(): Deallocate an allocated tuner  *********
+    //#warning deviceDeleteTuning(): Deallocate an allocated tuner  *********
     return true;
 }
 /*************************************************************
