@@ -8,8 +8,31 @@
 **************************************************************************/
 
 #include "USRP.h"
+#include <ios>
 
 PREPARE_LOGGING(USRP_i)
+
+namespace {
+    static inline void wait_pps(uhd::usrp::multi_usrp::sptr device)
+    {
+        boost::system_time end_time = boost::get_system_time() + boost::posix_time::milliseconds(1100);
+        uhd::time_spec_t time_start_last_pps = device->get_time_last_pps();
+        while (time_start_last_pps == device->get_time_last_pps())
+        {
+            if (boost::get_system_time() > end_time)
+            {
+                throw uhd::runtime_error(
+                    "Board 0 may not be getting a PPS signal!\n"
+                    "No PPS detected within the time interval.\n"
+                    "See the application notes for your device.\n"
+                );
+            }
+            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        }
+    }
+
+    static const long PREDELAY_USEC = 250;
+}
 
 USRP_i::USRP_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :
     USRP_base(devMgr_ior, id, lbl, sftwrPrfl)
@@ -54,7 +77,80 @@ void USRP_i::constructor()
      The incoming request for tuning contains a string describing the requested tuner
      type. The string for the request must match the string in the tuner status.
     ***********************************************************************************/
-    this->addChannels(1, "RX_DIGITIZER");
+    uhd::device_addr_t hint;
+    uhd::device_addrs_t dev_addrs = uhd::device::find(hint);
+    usrp_device_ptr = uhd::usrp::multi_usrp::make(dev_addrs[0]);
+    const size_t num_rx_channels = usrp_device_ptr->get_rx_num_channels();
+    const size_t num_tx_channels = usrp_device_ptr->get_tx_num_channels();
+    std::cout<<"number of rx channels: "<<num_rx_channels<<std::endl;
+    std::cout<<"number of tx channels: "<<num_tx_channels<<std::endl;
+    for (unsigned int i=0; i<num_rx_channels; i++) {
+        std::ostringstream rdc_name;
+        rdc_name << "RDC_" << i+1;
+        RDCs.push_back(this->addChild<RDC_i>(rdc_name.str()));
+    }
+    for (unsigned int i=0; i<num_tx_channels; i++) {
+        std::ostringstream tdc_name;
+        tdc_name << "TDC_" << i+1;
+        TDCs.push_back(this->addChild<TDC_i>(tdc_name.str()));
+    }
+    std::cout<<"len RDC: "<<RDCs.size()<<std::endl;
+    std::cout<<"len TDC: "<<TDCs.size()<<std::endl;
+}
+
+bool USRP_i::_synchronizeClock(const std::string source)
+{
+    RH_DEBUG(this->_baseLog, "Synchronizing clock to " << source);
+
+    // Wait for lock on the clock reference, although this does not seem to be
+    // sufficient when setting the clock from GPSDO to internal
+    // TODO: Timeout?
+    while (!(usrp_device_ptr->get_mboard_sensor("ref_locked", 0).to_bool())) {
+        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+    }
+
+    if (source == "GPSDO") {
+        RH_DEBUG(this->_baseLog, "Waiting for GPS lock");
+        // Require GPS lock before clock sync
+        // TODO: Timeout?
+        while (!(usrp_device_ptr->get_mboard_sensor("gps_locked", 0).to_bool())) {
+            boost::this_thread::sleep(boost::posix_time::seconds(1));
+        }
+
+        // Synchronize the USRP clock to GPS time by waiting for a PPS edge 
+        // and setting the next GPS time (in seconds) on the following PPS
+        // edge.
+        wait_pps(usrp_device_ptr);
+        uhd::time_spec_t next_gps(time_t(usrp_device_ptr->get_mboard_sensor("gps_time").to_int()+1));
+        usrp_device_ptr->set_time_next_pps(next_gps);
+
+        // Check that the last PPS time and most recent GPS time match. Per the
+        // UHD docs, there is supposed to be a 200ms lag between the PPS edge
+        // and GPS time updating, but in practice this seemed problematic.
+        wait_pps(usrp_device_ptr);
+        uhd::time_spec_t last_pps = usrp_device_ptr->get_time_last_pps();
+        uhd::time_spec_t last_gps(usrp_device_ptr->get_mboard_sensor("gps_time").to_int(), 0.0);
+        if (last_pps != last_gps) {
+            RH_WARN(this->_baseLog, "Waiting for GPS lock");
+            return false;
+        }
+        RH_INFO(this->_baseLog, "Device clock synchronized with GPS");
+    } else {
+        // Synchronize the USRP clock as closely as possible with the host by
+        // waiting for a PPS edge, then determining what the time would be at
+        // the next PPS edge and set that.
+        wait_pps(usrp_device_ptr);
+        struct timeval tmp_time;
+        gettimeofday(&tmp_time, NULL);
+        time_t wsec = tmp_time.tv_sec;
+        double fsec = tmp_time.tv_usec / 1e6;
+        usrp_device_ptr->set_time_next_pps(uhd::time_spec_t(wsec+1,fsec));
+        // NB: If you don't sleep or otherwise wait for the next PPS pulse,
+        //     the time will be set to the Unix epoch.
+        wait_pps(usrp_device_ptr);
+    }
+
+    return true;
 }
 
 /***********************************************************************************************
@@ -323,7 +419,7 @@ void USRP_i::deviceEnable(frontend_tuner_status_struct_struct &fts, size_t tuner
     modify fts, which corresponds to this->frontend_tuner_status[tuner_id]
     Make sure to set the 'enabled' member of fts to indicate that tuner as enabled
     ************************************************************/
-    #warning deviceEnable(): Enable the given tuner  *********
+    //#warning deviceEnable(): Enable the given tuner  *********
     fts.enabled = true;
     return;
 }
@@ -332,7 +428,7 @@ void USRP_i::deviceDisable(frontend_tuner_status_struct_struct &fts, size_t tune
     modify fts, which corresponds to this->frontend_tuner_status[tuner_id]
     Make sure to reset the 'enabled' member of fts to indicate that tuner as disabled
     ************************************************************/
-    #warning deviceDisable(): Disable the given tuner  *********
+    //#warning deviceDisable(): Disable the given tuner  *********
     fts.enabled = false;
     return;
 }
@@ -350,7 +446,7 @@ bool USRP_i::deviceSetTuningScan(const frontend::frontend_tuner_allocation_struc
 
     return true if the tuning succeeded, and false if it failed
     ************************************************************/
-    #warning deviceSetTuning(): Evaluate whether or not a tuner is added  *********
+    //#warning deviceSetTuning(): Evaluate whether or not a tuner is added  *********
     return true;
 }
 bool USRP_i::deviceSetTuning(const frontend::frontend_tuner_allocation_struct &request, frontend_tuner_status_struct_struct &fts, size_t tuner_id){
@@ -367,7 +463,7 @@ bool USRP_i::deviceSetTuning(const frontend::frontend_tuner_allocation_struct &r
 
     return true if the tuning succeeded, and false if it failed
     ************************************************************/
-    #warning deviceSetTuning(): Evaluate whether or not a tuner is added  *********
+    //#warning deviceSetTuning(): Evaluate whether or not a tuner is added  *********
     return true;
 }
 bool USRP_i::deviceDeleteTuning(frontend_tuner_status_struct_struct &fts, size_t tuner_id) {
@@ -375,7 +471,7 @@ bool USRP_i::deviceDeleteTuning(frontend_tuner_status_struct_struct &fts, size_t
     modify fts, which corresponds to this->frontend_tuner_status[tuner_id]
     return true if the tune deletion succeeded, and false if it failed
     ************************************************************/
-    #warning deviceDeleteTuning(): Deallocate an allocated tuner  *********
+    //#warning deviceDeleteTuning(): Deallocate an allocated tuner  *********
     return true;
 }
 /*************************************************************

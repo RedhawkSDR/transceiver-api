@@ -2,6 +2,22 @@
 #define USRP_I_IMPL_H
 
 #include "USRP_base.h"
+#include <uhd/usrp/multi_usrp.hpp>
+
+#include "RDC/RDC.h"
+#include "TDC/TDC.h"
+
+/*#include <uhd/types/ranges.hpp>
+#include <boost/algorithm/string.hpp> //for split
+#include <uhd/usrp/device_props.hpp>
+#include <uhd/usrp/mboard_props.hpp>
+#include <uhd/usrp/dboard_props.hpp>
+#include <uhd/usrp/codec_props.hpp>
+#include <uhd/usrp/dsp_props.hpp>
+#include <uhd/usrp/subdev_props.hpp>
+#include <uhd/usrp/dboard_id.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhd/usrp/dboard_eeprom.hpp>*/
 
 class USRP_i : public USRP_base
 {
@@ -43,6 +59,14 @@ class USRP_i : public USRP_base
         void set_rf_flow_id(const std::string& port_name, const std::string& id);
         frontend::RFInfoPkt get_rfinfo_pkt(const std::string& port_name);
         void set_rfinfo_pkt(const std::string& port_name, const frontend::RFInfoPkt& pkt);
+
+
+        std::vector<RDC_i*> RDCs;
+        std::vector<TDC_i*> TDCs;
+        uhd::usrp::multi_usrp::sptr usrp_device_ptr;
+        // Try to synchronize the USRP time to its clock source
+        bool _synchronizeClock(const std::string source);
+
     private:
         ////////////////////////////////////////
         // Required device specific functions // -- to be implemented by device developer
