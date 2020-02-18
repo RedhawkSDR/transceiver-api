@@ -41,6 +41,9 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
         # Make sure start and stop can be called without throwing exceptions
         self.comp.start()
         self.comp.stop()
+        print self.comp.devices
+        for dev in self.comp.devices:
+            print dev.label
 
 if __name__ == "__main__":
     ossie.utils.testing.main() # By default tests all implementations
