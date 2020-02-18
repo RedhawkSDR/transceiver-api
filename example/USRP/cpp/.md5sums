@@ -11,8 +11,8 @@ eeb9a6ebbbc5915542c488849b25126b  USRP.cpp
 2ea30f510efc5d7c611401048d3492a2  Makefile.am
 dab06b07ad6ccda84e187d7838691248  TDC/TDC_base.h
 1fc7a78940b9493c3739fff3748bc77d  Makefile.am.ide
-6c62f145fbd609ba6d69b2e109759059  USRP_base.h
-48f578b9f6ef0d128f3696b9d5c85c0b  USRP_base.cpp
+6ae24ff4981bbf37c7cebff819255a46  USRP_base.h
+b7ec502c9f11c16e3082ad7fbc625487  USRP_base.cpp
 fbbedc07682ed707591b2760b88b63d5  RDC/RDC.h
 8bfcd22353c3a57fee561ad86ee2a56b  reconf
 196689df88c07d3904fc26321c348a2b  RDC/RDC_base.cpp

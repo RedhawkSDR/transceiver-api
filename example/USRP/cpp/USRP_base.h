@@ -15,6 +15,16 @@
 
 #define BOOL_VALUE_HERE 0
 
+namespace enums {
+    // Enumerated values for device_reference_source_global
+    namespace device_reference_source_global {
+        static const std::string INTERNAL = "INTERNAL";
+        static const std::string EXTERNAL = "EXTERNAL";
+        static const std::string MIMO = "MIMO";
+        static const std::string GPSDO = "GPSDO";
+    }
+}
+
 class USRP_base : public frontend::FrontendScanningTunerDevice<frontend_tuner_status_struct_struct>, public virtual POA_CF::AggregatePlainDevice, public AggregateDevice_impl, public virtual frontend::digital_scanning_tuner_delegation, public virtual frontend::rfinfo_delegation, protected ThreadedComponent, public virtual DynamicComponent
 {
     public:
@@ -40,6 +50,10 @@ class USRP_base : public frontend::FrontendScanningTunerDevice<frontend_tuner_st
 
     protected:
         // Member variables exposed as properties
+        /// Property: device_reference_source_global
+        std::string device_reference_source_global;
+        /// Property: clock_sync
+        bool clock_sync;
         /// Property: frontend_coherent_feeds
         std::vector<std::string> frontend_coherent_feeds;
 

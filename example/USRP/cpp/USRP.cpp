@@ -77,6 +77,9 @@ void USRP_i::constructor()
      The incoming request for tuning contains a string describing the requested tuner
      type. The string for the request must match the string in the tuner status.
     ***********************************************************************************/
+
+    addPropertyListener(device_reference_source_global, this, &USRP_i::deviceReferenceSourceChanged);
+
     uhd::device_addr_t hint;
     uhd::device_addrs_t dev_addrs = uhd::device::find(hint);
     usrp_device_ptr = uhd::usrp::multi_usrp::make(dev_addrs[0]);
@@ -151,6 +154,36 @@ bool USRP_i::_synchronizeClock(const std::string source)
     }
 
     return true;
+}
+
+void USRP_i::deviceReferenceSourceChanged(std::string old_value, std::string new_value){
+    RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__ << "old_value=" << old_value << "  new_value=" << new_value);
+    RH_DEBUG(this->_baseLog,"deviceReferenceSourceChanged|device_reference_source_global=" << device_reference_source_global);
+
+    updateDeviceReferenceSource(new_value);
+
+    clock_sync = _synchronizeClock(new_value);
+}
+
+void USRP_i::updateDeviceReferenceSource(std::string source){
+    RH_TRACE(this->_baseLog,__PRETTY_FUNCTION__ << " source=" << source);
+
+    if (usrp_device_ptr.get() == NULL)
+        return;
+
+    if (source == "MIMO") {
+        usrp_device_ptr->set_clock_source("MIMO",0);
+        usrp_device_ptr->set_time_source("MIMO",0);
+    } else if (source == "EXTERNAL") {
+        usrp_device_ptr->set_clock_source("external",0);
+        usrp_device_ptr->set_time_source("external",0);
+    } else if (source == "INTERNAL") {
+        usrp_device_ptr->set_clock_source("internal",0);
+        usrp_device_ptr->set_time_source("external",0);
+    } else if (source == "GPSDO") {
+        usrp_device_ptr->set_clock_source("gpsdo",0);
+        usrp_device_ptr->set_time_source("gpsdo",0);
+    }
 }
 
 /***********************************************************************************************

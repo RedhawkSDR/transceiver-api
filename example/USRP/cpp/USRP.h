@@ -67,6 +67,9 @@ class USRP_i : public USRP_base
         // Try to synchronize the USRP time to its clock source
         bool _synchronizeClock(const std::string source);
 
+        void deviceReferenceSourceChanged(std::string old_value, std::string new_value);
+        void updateDeviceReferenceSource(std::string source);
+
     private:
         ////////////////////////////////////////
         // Required device specific functions // -- to be implemented by device developer

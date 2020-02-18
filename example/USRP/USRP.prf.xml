@@ -133,4 +133,20 @@ False: Does not need control and can just attach to any currently tasked device 
     <kind kindtype="allocation"/>
     <action type="external"/>
   </simplesequence>
+  <simple id="device_reference_source_global" mode="readwrite" name="device_reference_source_global" type="string">
+    <value>INTERNAL</value>
+    <enumerations>
+      <enumeration label="INTERNAL" value="INTERNAL"/>
+      <enumeration label="EXTERNAL" value="EXTERNAL"/>
+      <enumeration label="MIMO" value="MIMO"/>
+      <enumeration label="GPSDO" value="GPSDO"/>
+    </enumerations>
+    <kind kindtype="property"/>
+  </simple>
+  <simple id="clock_sync" mode="readonly" type="boolean">
+    <description>Indicates whether the clock source is synchronized with the USRP.</description>
+    <value>false</value>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
 </properties>

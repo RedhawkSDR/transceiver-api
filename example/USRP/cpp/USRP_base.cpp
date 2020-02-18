@@ -102,6 +102,24 @@ void USRP_base::releaseObject() throw (CORBA::SystemException, CF::LifeCycle::Re
 void USRP_base::loadProperties()
 {
     device_kind = "FRONTEND::TUNER";
+    addProperty(device_reference_source_global,
+                "INTERNAL",
+                "device_reference_source_global",
+                "device_reference_source_global",
+                "readwrite",
+                "",
+                "external",
+                "property");
+
+    addProperty(clock_sync,
+                false,
+                "clock_sync",
+                "",
+                "readonly",
+                "",
+                "external",
+                "property");
+
     addProperty(frontend_coherent_feeds,
                 "FRONTEND::coherent_feeds",
                 "frontend_coherent_feeds",
