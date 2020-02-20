@@ -8,7 +8,8 @@
 
 #include <frontend/frontend.h>
 #include <bulkio/bulkio.h>
-#include "struct_props.h"
+#include "TDC_struct_props.h"
+#include "../struct_props.h"
 
 #define BOOL_VALUE_HERE 0
 

@@ -310,9 +310,260 @@ void RDC_i::constructor()
 ************************************************************************************************/
 int RDC_i::serviceFunction()
 {
-    RH_DEBUG(this->_baseLog, "serviceFunction() example log message");
-    
+    if ((usrp_device_ptr.get() == NULL) or (frontend_tuner_status[0].allocation_id_csv.empty()) or (not frontend_tuner_status[0].enabled)) {
+        return NOOP;
+    }
+
+    bool rx_data = false;
+
+    scoped_tuner_lock tuner_lock(usrp_tuner.lock);
+
+    long num_samps = usrpReceive(1.0); // 1 second timeout
+
+    /* if auto-gain enabled, push data to gain method */
+    if (trigger_rx_autogain) {
+        float newGain = auto_gain(); // auto_gain will set trigger to false if appropriate
+        if(newGain != device_rx_gain_global)
+            updateDeviceRxGain(newGain, false);
+    }
+
+    // if the buffer is full OR (overflow occurred and buffer isn't empty), push buffer out as is and move to next buffer
+    if(usrp_tuners[tuner_id].buffer_size >= usrp_tuners[tuner_id].buffer_capacity ||
+                    (num_samps < 0 && usrp_tuners[tuner_id].buffer_size > 0) ){
+        rx_data = true;
+
+        RH_DEBUG(this->_baseLog, "serviceFunctionReceive|pushing buffer of " << usrp_tuners[tuner_id].buffer_size/2 << " samples");
+
+        // get stream id (creates one if not already created for this tuner)
+        std::string stream_id = getStreamId(tuner_id);
+
+        // Send updated SRI
+        if (usrp_tuners[tuner_id].update_sri){
+            RH_DEBUG(this->_baseLog, "USRP_UHD_i::serviceFunctionReceive|creating SRI for tuner: "<<tuner_id<<" with stream id: "<< stream_id);
+            BULKIO::StreamSRI sri = create(stream_id, frontend_tuner_status[tuner_id]);
+            sri.mode = 1; // complex
+            //printSRI(&sri,"USRP_UHD_i::serviceFunctionReceive SRI"); // DEBUG
+            dataShort_out->pushSRI(sri);
+            dataSDDS_out->pushSRI(sri);
+            usrp_tuners[tuner_id].update_sri = false;
+        }
+
+        // Pushing Data
+        // handle partial packet (b/c overflow occured)
+        if(usrp_tuners[tuner_id].buffer_size < usrp_tuners[tuner_id].buffer_capacity){
+            usrp_tuners[tuner_id].output_buffer.resize(usrp_tuners[tuner_id].buffer_size);
+        }
+        // Only push on active ports
+        if(dataShort_out->isActive()){
+            dataShort_out->pushPacket(usrp_tuners[tuner_id].output_buffer, usrp_tuners[tuner_id].output_buffer_time, false, stream_id);
+        }
+        // Don't check isActive because could be relying on attach override rather than a connection
+        // It doesn't actually do anything if the tuner/stream isn't configured for sdds already anyway
+        dataSDDS_out->pushPacket(usrp_tuners[tuner_id].output_buffer, usrp_tuners[tuner_id].output_buffer_time, false, stream_id);
+        // restore buffer size if necessary
+        if(usrp_tuners[tuner_id].buffer_size < usrp_tuners[tuner_id].buffer_capacity){
+            usrp_tuners[tuner_id].output_buffer.resize(usrp_tuners[tuner_id].buffer_capacity);
+        }
+        usrp_tuners[tuner_id].buffer_size = 0;
+        
+    } else if(num_samps != 0){ // either received data or overflow occurred, either way data is available
+        rx_data = true;
+    }
+
+    if(rx_data)
+        return NORMAL;
     return NOOP;
+}
+
+/* acquire tuner_lock prior to calling this function *
+ * this function will block up to "timeout" seconds
+ */
+long RDC_i::usrpReceive(double timeout){
+    RH_TRACE(USRP_UHD_i,__PRETTY_FUNCTION__ << " timeout:" << timeout);
+
+    // calc num samps to rx based on timeout, sr, and buffer size
+    size_t samps_to_rx = size_t((usrp_tuner.buffer_capacity-usrp_tuner.buffer_size) / 2);
+    if( timeout > 0 ){
+        samps_to_rx = std::min(samps_to_rx, size_t(timeout*frontend_tuner_status[0].sample_rate));
+    }
+
+    uhd::rx_metadata_t _metadata;
+
+    if (usrp_rx_streamer.get() == NULL){
+        usrpCreateRxStream();
+        RH_TRACE(this->_baseLog, "got rx_streamer[" << this->_tuner_number << "]");
+    }
+
+    size_t num_samps = 0;
+    try{
+        num_samps = usrp_rx_streamer->recv(
+            &usrp_tuners[tuner_id].output_buffer.at(usrp_tuners[tuner_id].buffer_size), // address of buffer to start filling data
+            samps_to_rx,
+            _metadata);
+    } catch(...){
+        RH_ERROR(this->_baseLog, "uhd::rx_streamer->recv() threw unknown exception");
+        return 0;
+    }
+    RH_TRACE(this->_baseLog, "usrpReceive|tuner_id=" << tuner_id << " num_samps=" << num_samps);
+    usrp_tuners[tuner_id].buffer_size += (num_samps*2);
+
+    //handle possible errors conditions
+    switch (_metadata.error_code) {
+        case uhd::rx_metadata_t::ERROR_CODE_NONE:
+            break;
+        case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
+            RH_WARN(this->_baseLog, "WARNING: TIMEOUT OCCURED ON USRP RECEIVE! (received num_samps=" << num_samps << ")");
+            return 0;
+        case uhd::rx_metadata_t::ERROR_CODE_OVERFLOW:
+            RH_WARN(this->_baseLog, "WARNING: USRP OVERFLOW DETECTED!");
+            // may have received data, but 0 is returned by usrp recv function so we don't know how many samples, must throw away
+            return -1; // this will just cause us to return NORMAL so there's no wait before next iteration
+        default:
+            RH_WARN(this->_baseLog, "WARNING: UHD source block got error code 0x" << _metadata.error_code);
+            return 0;
+    }
+    RH_TRACE(this->_baseLog, "usrpReceive|tuner_id=" << tuner_id << " after error switch");
+
+    if(num_samps == 0)
+        return 0;
+
+    RH_DEBUG(this->_baseLog, "usrpReceive|received data.  num_samps=" << num_samps
+                                                << "  buffer_size=" << usrp_tuners[tuner_id].buffer_size
+                                                << "  buffer_capacity=" << usrp_tuners[tuner_id].buffer_capacity );
+
+    // if first samples in buffer, update timestamps
+    if(num_samps*2 == usrp_tuners[tuner_id].buffer_size){
+        usrp_tuners[tuner_id].output_buffer_time = bulkio::time::utils::now();
+        usrp_tuners[tuner_id].output_buffer_time.twsec = (double)_metadata.time_spec.get_full_secs();
+        usrp_tuners[tuner_id].output_buffer_time.tfsec = _metadata.time_spec.get_frac_secs();
+        if (usrp_tuners[tuner_id].time_up.twsec <= 0)
+            usrp_tuners[tuner_id].time_up = usrp_tuners[tuner_id].output_buffer_time;
+        usrp_tuners[tuner_id].time_down = usrp_tuners[tuner_id].output_buffer_time;
+    }
+
+    return num_samps;
+}
+
+/*----------------------------------------------------------------------------
+        This is a very simple auto-gain function.
+        Notes:
+             1. Calculates the bit 'loading' of a sample over a sample set.
+             2. Kept generic to work for all daughtercard types in all modes.
+             3. Calculates instantaneous values; not continuously calculating.
+             4. Requires minimum of 500 samples (250 complex samples)
+ ----------------------------------------------------------------------------*/
+float RDC_i::auto_gain() {
+    size_t  samplesRequired = 500; // not configurable; hard-coded to 500, which is really 250 complex samples
+    size_t  samplesFound    = 0;
+    long    maxBits         = (device_rx_mode == "8bit") ? 8 : 16;
+    maxBits -= this->rx_autogain_guard_bits;
+    short   maxValue        = (device_rx_mode == "8bit") ? 0x7f  : 0x7fff;
+    short   maxValueFound   = 0; // max value in current buffer
+    long    bitsInUse       = 0;
+    float   maxGain         = 0;
+    float   minGain         = 0;
+    float   gainAdjust      = 0;
+    float   newGain         = device_rx_gain_global;
+
+    maxGain = device_characteristics.gain_max;
+    minGain = device_characteristics.gain_min;
+    samplesFound = usrp_tuner.buffer_size;
+    for(size_t sampleNum=0 ; sampleNum<usrp_tuner.buffer_size; sampleNum++) {
+        // max value tracker. Look at Real and Complex values.
+        if((short)(usrp_tuner.output_buffer[sampleNum]) > maxValueFound)
+            maxValueFound = (short)(usrp_tuner.output_buffer[sampleNum]);
+    }
+
+    // require buffer to have sufficient number of samples before turning off trigger
+    RH_DEBUG(this->_baseLog, __PRETTY_FUNCTION__ << " Got " << samplesFound << " of " << samplesRequired << " samples required for auto-gain calculation.");
+    if (samplesFound >= samplesRequired) {
+        RH_DEBUG(this->_baseLog, __PRETTY_FUNCTION__ << " Max value in buffer is " << maxValueFound << " compared to a fully loaded max of " << maxValue);
+        trigger_rx_autogain = false;
+    } else {
+        RH_DEBUG(this->_baseLog, __PRETTY_FUNCTION__ << " Not enough samples to calculate auto-gain; not resetting trigger yet.");
+        trigger_rx_autogain = true;
+        return device_rx_gain_global; // no change yet
+    }
+
+    // compute bits currently in use
+    for (int32_t m=maxValueFound; m; m>>=1) bitsInUse++; // floor(log10(maxValueFound) / log10(2)) + 1
+    bitsInUse++; // add 1 to account for negative range as well
+    RH_DEBUG(this->_baseLog, __PRETTY_FUNCTION__ << " Max value in buffer uses " << bitsInUse <<" bits compared to " << maxBits << " available non-guard bits");
+
+    // compute gain adjustment
+    gainAdjust = (maxBits-bitsInUse) * 6; // x6 to convert bits to dB
+    RH_DEBUG(this->_baseLog, __PRETTY_FUNCTION__ << " Gain adjustment calculated is " << gainAdjust);
+
+    // adjust gain according to actual device min and max values
+    if (gainAdjust > 0) { // increase gain if possible
+        RH_DEBUG(this->_baseLog, __PRETTY_FUNCTION__ << " device_rx_gain_global=" << device_rx_gain_global << "  maxGain=" << maxGain);
+        if (device_rx_gain_global < maxGain) {
+            newGain = fmin(gainAdjust+device_rx_gain_global, maxGain);
+            RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__<<" Increasing Gain to " << newGain);
+        } else {
+            // input signal too low.  can't increase gain further
+            RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__<<" Input too low; no more gain possible!");
+            newGain = maxGain;
+        }
+    } else if (gainAdjust < 0) { // reduce gain if possible
+        RH_DEBUG(this->_baseLog, __PRETTY_FUNCTION__ << " device_rx_gain_global=" << device_rx_gain_global << "  minGain=" << minGain);
+        if (device_rx_gain_global > minGain) {
+            newGain = fmax(gainAdjust+device_rx_gain_global, minGain);
+            RH_DEBUG(this->_baseLog, __PRETTY_FUNCTION__ << " Decreasing Gain to " << newGain);
+        } else {
+            // input signal too hot.  can't reduce gain further
+            RH_DEBUG(this->_baseLog, __PRETTY_FUNCTION__ << " Input too high; no more attenuation possible!");
+            newGain = minGain;
+        }
+    } else { // no change necessary
+        RH_DEBUG(this->_baseLog, __PRETTY_FUNCTION__ << " No gain adjustments necessary.");
+        newGain = device_rx_gain_global;
+    }
+    return newGain;
+}
+
+void RDC_i::setTunerNumber(size_t tuner_number) {
+    this->_tuner_number = tuner_number;
+}
+
+void RDC_i::setUHDptr(const uhd::usrp::multi_usrp::sptr parent_device_ptr) {
+    usrp_device_ptr = parent_device_ptr;
+}
+
+/* acquire tuner_lock prior to calling this function *
+ */
+bool RDC_i::usrpCreateRxStream(){
+    //cleanup possible old one
+    usrp_rx_streamer.reset();
+
+    /*!
+     * The CPU format is a string that describes the format of host memory.
+     * Conversions for the following CPU formats have been implemented:
+     *  - fc64 - complex<double>
+     *  - fc32 - complex<float>
+     *  - sc16 - complex<int16_t>
+     *  - sc8 - complex<int8_t>
+     */
+    std::string cpu_format = "sc16"; // complex dataShort
+    RH_DEBUG(this->_baseLog, "usrpCreateRxStream|using cpu_format " << cpu_format);
+
+    /*!
+     * The OTW format is a string that describes the format over-the-wire.
+     * The following over-the-wire formats have been implemented:
+     *  - sc16 - Q16 I16
+     *  - sc8 - Q8_1 I8_1 Q8_0 I8_0
+     */
+    std::string wire_format = "sc16";
+    if(device_rx_mode == "8bit") {
+        wire_format = "sc8"; // enable 8-bit mode with "sc8"
+    }
+    RH_DEBUG(this->_baseLog, "usrpCreateRxStream|using wire_format " << wire_format);
+
+    uhd::stream_args_t stream_args(cpu_format,wire_format);
+    stream_args.channels.push_back(this->_tuner_number);
+    stream_args.args["noclear"] = "1";
+    usrp_rx_streamer = usrp_device_ptr->get_rx_stream(stream_args);
+    return true;
 }
 
 /*************************************************************

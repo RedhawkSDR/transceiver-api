@@ -91,6 +91,8 @@ void USRP_i::constructor()
         std::ostringstream rdc_name;
         rdc_name << "RDC_" << i+1;
         RDCs.push_back(this->addChild<RDC_i>(rdc_name.str()));
+        RDCs.back()->setTunerNumber(i);
+        RDCs.back()->setUHDptr(usrp_device_ptr);
     }
     for (unsigned int i=0; i<num_tx_channels; i++) {
         std::ostringstream tdc_name;

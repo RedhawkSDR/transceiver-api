@@ -8,7 +8,8 @@
 
 #include <frontend/frontend.h>
 #include <bulkio/bulkio.h>
-#include "struct_props.h"
+#include "RDC_struct_props.h"
+#include "../struct_props.h"
 
 #define BOOL_VALUE_HERE 0
 
@@ -41,10 +42,18 @@ class RDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_stru
         std::string device_kind;
         /// Property: device_model
         std::string device_model;
+        /// Property: rx_autogain_on_tune
+        bool rx_autogain_on_tune;
+        /// Property: trigger_rx_autogain
+        bool trigger_rx_autogain;
+        /// Property: rx_autogain_guard_bits
+        unsigned short rx_autogain_guard_bits;
         /// Property: frontend_listener_allocation
         frontend::frontend_listener_allocation_struct frontend_listener_allocation;
         /// Property: frontend_tuner_allocation
         frontend::frontend_tuner_allocation_struct frontend_tuner_allocation;
+        /// Property: device_parameters
+        device_parameters_struct device_parameters;
         /// Property: frontend_tuner_status
         std::vector<frontend_tuner_status_struct_struct> frontend_tuner_status;
 

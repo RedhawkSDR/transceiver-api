@@ -119,6 +119,33 @@ void RDC_base::loadProperties()
                 "eq",
                 "allocation");
 
+    addProperty(rx_autogain_on_tune,
+                false,
+                "rx_autogain_on_tune",
+                "rx_autogain_on_tune",
+                "readwrite",
+                "",
+                "external",
+                "property");
+
+    addProperty(trigger_rx_autogain,
+                false,
+                "trigger_rx_autogain",
+                "trigger_rx_autogain",
+                "readwrite",
+                "",
+                "external",
+                "property");
+
+    addProperty(rx_autogain_guard_bits,
+                1,
+                "rx_autogain_guard_bits",
+                "rx_autogain_guard_bits",
+                "readwrite",
+                "bits",
+                "external",
+                "property");
+
     addProperty(frontend_listener_allocation,
                 frontend::frontend_listener_allocation_struct(),
                 "FRONTEND::listener_allocation",
@@ -136,6 +163,15 @@ void RDC_base::loadProperties()
                 "",
                 "external",
                 "allocation");
+
+    addProperty(device_parameters,
+                device_parameters_struct(),
+                "device_characteristics",
+                "device_parameters",
+                "readonly",
+                "",
+                "external",
+                "property");
 
     addProperty(frontend_tuner_status,
                 "FRONTEND::tuner_status",
