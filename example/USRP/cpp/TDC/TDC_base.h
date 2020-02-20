@@ -42,6 +42,10 @@ class TDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_stru
         std::string device_kind;
         /// Property: device_model
         std::string device_model;
+        /// Property: device_gain
+        float device_gain;
+        /// Property: device_mode
+        std::string device_mode;
         /// Property: frontend_listener_allocation
         frontend::frontend_listener_allocation_struct frontend_listener_allocation;
         /// Property: frontend_transmitter_allocation

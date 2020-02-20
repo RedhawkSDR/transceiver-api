@@ -114,7 +114,20 @@ False: Does not need control and can just attach to any currently tasked device 
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
-  <struct id="device_characteristics" mode="readonly" name="device_parameters">
+  <simple id="device_gain" mode="readwrite" name="device_gain" type="float">
+    <description>gain value</description>
+    <value>0</value>
+    <units>dB</units>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
+  <simple id="device_mode" mode="readwrite" name="device_mode" type="string">
+    <description>16bit or 8bit</description>
+    <value>16bit</value>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
+  <struct id="device_characteristics" mode="readonly" name="device_characteristics">
     <description>Describes the daughtercards and channels found in the USRP</description>
       <simple id="device_characteristics::ch_name" mode="readonly" name="ch_name" type="string">
         <action type="external"/>

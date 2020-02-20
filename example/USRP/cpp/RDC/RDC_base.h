@@ -48,12 +48,16 @@ class RDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_stru
         bool trigger_rx_autogain;
         /// Property: rx_autogain_guard_bits
         unsigned short rx_autogain_guard_bits;
+        /// Property: device_gain
+        float device_gain;
+        /// Property: device_mode
+        std::string device_mode;
         /// Property: frontend_listener_allocation
         frontend::frontend_listener_allocation_struct frontend_listener_allocation;
         /// Property: frontend_tuner_allocation
         frontend::frontend_tuner_allocation_struct frontend_tuner_allocation;
-        /// Property: device_parameters
-        device_parameters_struct device_parameters;
+        /// Property: device_characteristics
+        device_characteristics_struct device_characteristics;
         /// Property: frontend_tuner_status
         std::vector<frontend_tuner_status_struct_struct> frontend_tuner_status;
 

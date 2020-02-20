@@ -146,6 +146,24 @@ void RDC_base::loadProperties()
                 "external",
                 "property");
 
+    addProperty(device_gain,
+                0,
+                "device_gain",
+                "device_gain",
+                "readwrite",
+                "dB",
+                "external",
+                "property");
+
+    addProperty(device_mode,
+                "16bit",
+                "device_mode",
+                "device_mode",
+                "readwrite",
+                "",
+                "external",
+                "property");
+
     addProperty(frontend_listener_allocation,
                 frontend::frontend_listener_allocation_struct(),
                 "FRONTEND::listener_allocation",
@@ -164,10 +182,10 @@ void RDC_base::loadProperties()
                 "external",
                 "allocation");
 
-    addProperty(device_parameters,
-                device_parameters_struct(),
+    addProperty(device_characteristics,
+                device_characteristics_struct(),
                 "device_characteristics",
-                "device_parameters",
+                "device_characteristics",
                 "readonly",
                 "",
                 "external",

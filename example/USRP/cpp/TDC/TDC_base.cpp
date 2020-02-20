@@ -114,6 +114,24 @@ void TDC_base::loadProperties()
                 "eq",
                 "allocation");
 
+    addProperty(device_gain,
+                0,
+                "device_gain",
+                "device_gain",
+                "readwrite",
+                "dB",
+                "external",
+                "property");
+
+    addProperty(device_mode,
+                "16bit",
+                "device_mode",
+                "device_mode",
+                "readwrite",
+                "",
+                "external",
+                "property");
+
     addProperty(frontend_listener_allocation,
                 frontend::frontend_listener_allocation_struct(),
                 "FRONTEND::listener_allocation",

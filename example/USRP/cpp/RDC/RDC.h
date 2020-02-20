@@ -153,9 +153,12 @@ class RDC_i : public RDC_base
         usrpTunerStruct usrp_tuner; // data buffer/timestamps, lock
         bool usrpCreateRxStream();
         size_t _tuner_number;
+        std::string _stream_id;
         uhd::usrp::multi_usrp::sptr usrp_device_ptr;
         long usrpReceive(double timeout);
         float auto_gain();
+        void updateDeviceRxGain(double gain, bool lock);
+        void getStreamId();
 
     private:
         ////////////////////////////////////////
