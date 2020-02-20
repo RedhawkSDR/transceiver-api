@@ -2,6 +2,9 @@
 
 import ossie.utils.testing
 from ossie.utils import sb
+import frontend
+from redhawk.frontendInterfaces import FRONTEND
+from frontend import tuner_device, fe_types
 
 class DeviceTests(ossie.utils.testing.RHTestCase):
     # Path to the SPD file, relative to this file. This must be set in order to
@@ -39,11 +42,38 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
     def testBasicBehavior(self):
         #######################################################################
         # Make sure start and stop can be called without throwing exceptions
-        self.comp.start()
-        self.comp.stop()
         print self.comp.devices
         for dev in self.comp.devices:
             print dev.label
+            if 'RDC' in dev.label:
+                break
+        #frontend_allocation = tuner_device.createTunerAllocation(tuner_type="RDC",bandwidth=24.576, center_frequency=30000000, bandwidth_tolerance=100, allocation_id='hello', returnDict=False)
+        frontend_allocation = tuner_device.createTunerAllocation(tuner_type="RDC",center_frequency=30000000, allocation_id='hello', returnDict=False)
+        try:
+            #retval = dev.allocateCapacity([frontend_allocation])
+            retval = dev.allocate([frontend_allocation])
+            print retval
+        except Exception, e:
+            print e
+            caps = e.capacities
+            for cap in caps:
+                print ' ', cap.id
+                for _cap in cap.value._v:
+                    print '   ',_cap.id, _cap.value._v
+            print dir(e)
+        
+        try:
+            retval = self.comp.allocateCapacity([frontend_allocation])
+            print retval
+        except Exception, e:
+            print e
+            caps = e.capacities
+            for cap in caps:
+                print ' ', cap.id
+                for _cap in cap.value._v:
+                    print '   ',_cap.id, _cap.value._v
+            print dir(e)
+        
 
 if __name__ == "__main__":
     ossie.utils.testing.main() # By default tests all implementations

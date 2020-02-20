@@ -38,22 +38,10 @@ class TDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_stru
 
     protected:
         // Member variables exposed as properties
-        /// Property: device_kind
-        std::string device_kind;
-        /// Property: device_model
-        std::string device_model;
         /// Property: device_gain
         float device_gain;
         /// Property: device_mode
         std::string device_mode;
-        /// Property: frontend_listener_allocation
-        frontend::frontend_listener_allocation_struct frontend_listener_allocation;
-        /// Property: frontend_transmitter_allocation
-        frontend::frontend_transmitter_allocation_struct frontend_transmitter_allocation;
-        /// Property: frontend_tuner_allocation
-        frontend::frontend_tuner_allocation_struct frontend_tuner_allocation;
-        /// Property: frontend_tuner_status
-        std::vector<frontend_tuner_status_struct_struct> frontend_tuner_status;
 
         // Ports
         /// Port: DigitalTuner_in

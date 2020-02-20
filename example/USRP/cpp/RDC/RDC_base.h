@@ -38,10 +38,6 @@ class RDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_stru
 
     protected:
         // Member variables exposed as properties
-        /// Property: device_kind
-        std::string device_kind;
-        /// Property: device_model
-        std::string device_model;
         /// Property: rx_autogain_on_tune
         bool rx_autogain_on_tune;
         /// Property: trigger_rx_autogain
@@ -52,14 +48,8 @@ class RDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_stru
         float device_gain;
         /// Property: device_mode
         std::string device_mode;
-        /// Property: frontend_listener_allocation
-        frontend::frontend_listener_allocation_struct frontend_listener_allocation;
-        /// Property: frontend_tuner_allocation
-        frontend::frontend_tuner_allocation_struct frontend_tuner_allocation;
         /// Property: device_characteristics
         device_characteristics_struct device_characteristics;
-        /// Property: frontend_tuner_status
-        std::vector<frontend_tuner_status_struct_struct> frontend_tuner_status;
 
         // Ports
         /// Port: RFInfo_in

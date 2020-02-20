@@ -97,23 +97,7 @@ void TDC_base::releaseObject() throw (CORBA::SystemException, CF::LifeCycle::Rel
 
 void TDC_base::loadProperties()
 {
-    addProperty(device_kind,
-                "FRONTEND::TUNER",
-                "DCE:cdc5ee18-7ceb-4ae6-bf4c-31f983179b4d",
-                "device_kind",
-                "readonly",
-                "",
-                "eq",
-                "allocation");
-
-    addProperty(device_model,
-                "DCE:0f99b2e4-9903-4631-9846-ff349d18ecfb",
-                "device_model",
-                "readonly",
-                "",
-                "eq",
-                "allocation");
-
+    device_kind = "FRONTEND::TUNER";
     addProperty(device_gain,
                 0,
                 "device_gain",
@@ -132,41 +116,9 @@ void TDC_base::loadProperties()
                 "external",
                 "property");
 
-    addProperty(frontend_listener_allocation,
-                frontend::frontend_listener_allocation_struct(),
-                "FRONTEND::listener_allocation",
-                "frontend_listener_allocation",
-                "writeonly",
-                "",
-                "external",
-                "allocation");
-
-    addProperty(frontend_transmitter_allocation,
-                frontend::frontend_transmitter_allocation_struct(),
-                "FRONTEND::transmitter_allocation",
-                "frontend_transmitter_allocation",
-                "writeonly",
-                "",
-                "external",
-                "allocation");
-
-    addProperty(frontend_tuner_allocation,
-                frontend::frontend_tuner_allocation_struct(),
-                "FRONTEND::tuner_allocation",
-                "frontend_tuner_allocation",
-                "writeonly",
-                "",
-                "external",
-                "allocation");
-
-    addProperty(frontend_tuner_status,
-                "FRONTEND::tuner_status",
-                "frontend_tuner_status",
-                "readonly",
-                "",
-                "external",
-                "property");
-
+    frontend_listener_allocation = frontend::frontend_listener_allocation_struct();
+    frontend_transmitter_allocation = frontend::frontend_transmitter_allocation_struct();
+    frontend_tuner_allocation = frontend::frontend_tuner_allocation_struct();
 }
 
 CF::Properties* TDC_base::getTunerStatus(const std::string& allocation_id)
