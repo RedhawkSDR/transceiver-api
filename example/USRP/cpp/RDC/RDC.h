@@ -111,6 +111,26 @@ struct usrpTunerStruct {
 class RDC_i : public RDC_base
 {
     ENABLE_LOGGING
+
+    public:
+        struct usrpRangesStruct {
+            usrpRangesStruct(){
+                reset();
+            }
+
+            uhd::meta_range_t frequency;
+            uhd::meta_range_t bandwidth;
+            uhd::meta_range_t sample_rate;
+            uhd::meta_range_t gain;
+
+            void reset(){
+                frequency.clear();
+                bandwidth.clear();
+                sample_rate.clear();
+                gain.clear();
+            };
+        };
+
     public:
         RDC_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl);
         RDC_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, char *compDev);
@@ -124,6 +144,7 @@ class RDC_i : public RDC_base
 
         void setTunerNumber(size_t tuner_number);
         void setUHDptr(const uhd::usrp::multi_usrp::sptr parent_device_ptr);
+        void updateDeviceCharacteristics();
 
     protected:
         std::string getTunerType(const std::string& allocation_id);
@@ -152,13 +173,16 @@ class RDC_i : public RDC_base
         uhd::rx_streamer::sptr usrp_rx_streamer;
         usrpTunerStruct usrp_tuner; // data buffer/timestamps, lock
         bool usrpCreateRxStream();
-        size_t _tuner_number;
+        int _tuner_number;
         std::string _stream_id;
         uhd::usrp::multi_usrp::sptr usrp_device_ptr;
         long usrpReceive(double timeout);
         float auto_gain();
         void updateDeviceRxGain(double gain, bool lock);
         void getStreamId();
+        usrpRangesStruct usrp_range;    // freq/bw/sr/gain ranges supported by each tuner channel
+                                        // indices map to tuner_id
+                                        // protected by prop_lock
 
     private:
         ////////////////////////////////////////

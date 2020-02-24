@@ -50,9 +50,10 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
         #frontend_allocation = tuner_device.createTunerAllocation(tuner_type="RDC",bandwidth=24.576, center_frequency=30000000, bandwidth_tolerance=100, allocation_id='hello', returnDict=False)
         frontend_allocation = tuner_device.createTunerAllocation(tuner_type="RDC",center_frequency=30000000, allocation_id='hello', returnDict=False)
         try:
-            #retval = dev.allocateCapacity([frontend_allocation])
-            retval = dev.allocate([frontend_allocation])
-            print retval
+            alloc_response_1 = dev.allocate([frontend_allocation])
+            print alloc_response_1
+            alloc_response_2 = dev.allocate([frontend_allocation])
+            print alloc_response_2
         except Exception, e:
             print e
             caps = e.capacities
@@ -63,7 +64,8 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
             print dir(e)
         
         try:
-            retval = self.comp.allocateCapacity([frontend_allocation])
+            #retval = self.comp.allocateCapacity([frontend_allocation])
+            retval = self.comp.allocate([frontend_allocation])
             print retval
         except Exception, e:
             print e
@@ -73,7 +75,8 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
                 for _cap in cap.value._v:
                     print '   ',_cap.id, _cap.value._v
             print dir(e)
-        
+        dev.deallocate(alloc_response_1[0].alloc_id)
+
 
 if __name__ == "__main__":
     ossie.utils.testing.main() # By default tests all implementations
