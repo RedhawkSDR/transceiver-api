@@ -448,67 +448,150 @@ int USRP_i::serviceFunction()
     return NOOP;
 }
 
+CF::Device::Allocations* USRP_i::allocate(const CF::Properties& capacities)
+throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CF::Device::InsufficientCapacity, CORBA::SystemException)
+{
+    CF::Device::Allocations_var result = new CF::Device::Allocations();
+
+    if (capacities.length() == 0) {
+        RH_TRACE(this->_baseLog, "no capacities to configure.");
+        return result._retn();
+    }
+
+    std::string allocation_id = ossie::generateUUID();
+    const redhawk::PropertyMap& props = redhawk::PropertyMap::cast(capacities);
+
+    // copy the const properties to something that is modifiable
+    CF::Properties local_capacities;
+    redhawk::PropertyMap& local_props = redhawk::PropertyMap::cast(local_capacities);
+    local_props = props;
+
+    if (local_props.find("FRONTEND::coherent_feeds") != local_props.end()) {
+        /*redhawk::PropertyMap& tuner_alloc = redhawk::PropertyMap::cast(local_props["FRONTEND::tuner_allocation"].asProperties());
+        if (tuner_alloc.find("FRONTEND::tuner_allocation::allocation_id") != tuner_alloc.end()) {
+            std::string requested_alloc = tuner_alloc["FRONTEND::tuner_allocation::allocation_id"].toString();
+            if (not requested_alloc.empty()) {
+                if (_delegatedAllocations.find(requested_alloc) == _delegatedAllocations.end()) {
+                    allocation_id = requested_alloc;
+                } else {
+                    allocation_id = "_"+allocation_id;
+                    allocation_id = requested_alloc+allocation_id;
+                }
+                tuner_alloc["FRONTEND::tuner_allocation::allocation_id"] = allocation_id;
+            }
+        }*/
+    }
+    if (local_props.find("FRONTEND::tuner_allocation") != local_props.end()) {
+        redhawk::PropertyMap& tuner_alloc = redhawk::PropertyMap::cast(local_props["FRONTEND::tuner_allocation"].asProperties());
+        if (tuner_alloc.find("FRONTEND::tuner_allocation::allocation_id") != tuner_alloc.end()) {
+            std::string requested_alloc = tuner_alloc["FRONTEND::tuner_allocation::allocation_id"].toString();
+            if (not requested_alloc.empty()) {
+                if (_delegatedAllocations.find(requested_alloc) == _delegatedAllocations.end()) {
+                    allocation_id = requested_alloc;
+                } else {
+                    allocation_id = "_"+allocation_id;
+                    allocation_id = requested_alloc+allocation_id;
+                }
+                tuner_alloc["FRONTEND::tuner_allocation::allocation_id"] = allocation_id;
+            }
+        }
+    }
+    /*if (local_props.find("FRONTEND::tuner_allocation") != local_props.end()) {
+        redhawk::PropertyMap& tuner_alloc = redhawk::PropertyMap::cast(local_props["FRONTEND::tuner_allocation"].asProperties());
+        if (tuner_alloc.find("FRONTEND::tuner_allocation::tuner_type") != tuner_alloc.end()) {
+            std::string requested_device = tuner_alloc["FRONTEND::tuner_allocation::tuner_type"].toString();
+            if (not requested_alloc.empty()) {
+                if (_delegatedAllocations.find(requested_alloc) == _delegatedAllocations.end()) {
+                    allocation_id = requested_alloc;
+                } else {
+                    allocation_id = "_"+allocation_id;
+                    allocation_id = requested_alloc+allocation_id;
+                }
+                tuner_alloc["FRONTEND::tuner_allocation::allocation_id"] = allocation_id;
+            }
+        }
+    }*/
+
+    // Verify that the device is in a valid state
+    if (!isUnlocked() || isDisabled() || isError()) {
+        const char* invalidState;
+        if (isLocked()) {
+            invalidState = "LOCKED";
+        } else if (isDisabled()) {
+            invalidState = "DISABLED";
+        } else if (isError()) {
+            invalidState = "ERROR";
+        } else {
+            invalidState = "SHUTTING_DOWN";
+        }
+        throw CF::Device::InvalidState(invalidState);
+    }
+
+    for (std::vector<RDC_i*>::iterator it=RDCs.begin(); it!=RDCs.end(); it++) {
+        result = (*it)->allocate(local_capacities);
+        if (result->length() > 0) {
+            _delegatedAllocations[allocation_id] = *it;
+            return result._retn();
+        }
+    }
+
+    for (std::vector<TDC_i*>::iterator it=TDCs.begin(); it!=TDCs.end(); it++) {
+        result = (*it)->allocate(local_capacities);
+        if (result->length() > 0) {
+            _delegatedAllocations[allocation_id] = *it;
+            return result._retn();
+        }
+    }
+
+    return result._retn();
+}
+
+void USRP_i::deallocate (const char* alloc_id)
+throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CORBA::SystemException)
+{
+    std::string _alloc_id = ossie::corba::returnString(alloc_id);
+    if (_delegatedAllocations.find(_alloc_id) != _delegatedAllocations.end()) {
+        Device_impl* dev = dynamic_cast<Device_impl*>(_delegatedAllocations[_alloc_id]);
+        if (dev) {
+            dev->deallocate(alloc_id);
+            return;
+        }
+    }
+    CF::Properties invalidProps;
+    throw CF::Device::InvalidCapacity("Capacities do not match allocated ones in the child devices", invalidProps);
+}
+
 /*************************************************************
 Functions supporting tuning allocation
 *************************************************************/
 void USRP_i::deviceEnable(frontend_tuner_status_struct_struct &fts, size_t tuner_id){
     /************************************************************
-    modify fts, which corresponds to this->frontend_tuner_status[tuner_id]
-    Make sure to set the 'enabled' member of fts to indicate that tuner as enabled
+     *  not used. All allocations delegated to children
     ************************************************************/
-    //#warning deviceEnable(): Enable the given tuner  *********
-    fts.enabled = true;
     return;
 }
 void USRP_i::deviceDisable(frontend_tuner_status_struct_struct &fts, size_t tuner_id){
     /************************************************************
-    modify fts, which corresponds to this->frontend_tuner_status[tuner_id]
-    Make sure to reset the 'enabled' member of fts to indicate that tuner as disabled
+     *  not used. All allocations delegated to children
     ************************************************************/
-    //#warning deviceDisable(): Disable the given tuner  *********
-    fts.enabled = false;
     return;
 }
 bool USRP_i::deviceSetTuningScan(const frontend::frontend_tuner_allocation_struct &request, const frontend::frontend_scanner_allocation_struct &scan_request, frontend_tuner_status_struct_struct &fts, size_t tuner_id){
     /************************************************************
-
-    This function is called when the allocation request contains a scanner allocation
-
-    modify fts, which corresponds to this->frontend_tuner_status[tuner_id]
-      At a minimum, bandwidth, center frequency, and sample_rate have to be set
-      If the device is tuned to exactly what the request was, the code should be:
-        fts.bandwidth = request.bandwidth;
-        fts.center_frequency = request.center_frequency;
-        fts.sample_rate = request.sample_rate;
-
-    return true if the tuning succeeded, and false if it failed
+     *  not used. All allocations delegated to children
     ************************************************************/
-    //#warning deviceSetTuning(): Evaluate whether or not a tuner is added  *********
-    return true;
+    return false;
 }
 bool USRP_i::deviceSetTuning(const frontend::frontend_tuner_allocation_struct &request, frontend_tuner_status_struct_struct &fts, size_t tuner_id){
     /************************************************************
-
-    This function is called when the allocation request does not contain a scanner allocation
-
-    modify fts, which corresponds to this->frontend_tuner_status[tuner_id]
-      At a minimum, bandwidth, center frequency, and sample_rate have to be set
-      If the device is tuned to exactly what the request was, the code should be:
-        fts.bandwidth = request.bandwidth;
-        fts.center_frequency = request.center_frequency;
-        fts.sample_rate = request.sample_rate;
-
-    return true if the tuning succeeded, and false if it failed
+     *  not used. All allocations delegated to children
     ************************************************************/
-    //#warning deviceSetTuning(): Evaluate whether or not a tuner is added  *********
-    return true;
+    return false;
 }
 bool USRP_i::deviceDeleteTuning(frontend_tuner_status_struct_struct &fts, size_t tuner_id) {
     /************************************************************
-    modify fts, which corresponds to this->frontend_tuner_status[tuner_id]
-    return true if the tune deletion succeeded, and false if it failed
+     *  not used. All allocations delegated to children
     ************************************************************/
-    //#warning deviceDeleteTuning(): Deallocate an allocated tuner  *********
     return true;
 }
 /*************************************************************

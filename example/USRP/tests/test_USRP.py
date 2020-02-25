@@ -3,6 +3,8 @@
 import ossie.utils.testing
 from ossie.utils import sb
 import frontend
+from ossie.cf import CF
+from omniORB import any
 from redhawk.frontendInterfaces import FRONTEND
 from frontend import tuner_device, fe_types
 
@@ -39,6 +41,14 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
         # Clean up all sandbox artifacts created during test
         sb.release()
 
+    def _check_fts_member(self, devptr, name, value):
+        fts = devptr.query([CF.DataType(id='FRONTEND::tuner_status',value=any.to_any(None))])
+        fts_v = fts[0].value._v[0]
+        for prop in fts_v._v:
+            if prop.id == name:
+                found_value = prop.value._v
+        self.assertEquals(found_value, value)
+
     def testBasicBehavior(self):
         #######################################################################
         # Make sure start and stop can be called without throwing exceptions
@@ -48,11 +58,19 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
             if 'RDC' in dev.label:
                 break
         #frontend_allocation = tuner_device.createTunerAllocation(tuner_type="RDC",bandwidth=24.576, center_frequency=30000000, bandwidth_tolerance=100, allocation_id='hello', returnDict=False)
-        frontend_allocation = tuner_device.createTunerAllocation(tuner_type="RDC",center_frequency=30000000, allocation_id='hello', returnDict=False)
+
+        _allocation_id = 'hello'
+        frontend_allocation = tuner_device.createTunerAllocation(tuner_type="RDC",center_frequency=30000000, allocation_id=_allocation_id, returnDict=False)
+        allocation_id_csv = 'abc'
+
+        self._check_fts_member(dev, 'FRONTEND::tuner_status::allocation_id_csv', '')
+
         try:
             alloc_response_1 = dev.allocate([frontend_allocation])
             print alloc_response_1
+            self.assertEquals(len(alloc_response_1), 1)
             alloc_response_2 = dev.allocate([frontend_allocation])
+            self.assertEquals(len(alloc_response_2), 0)
             print alloc_response_2
         except Exception, e:
             print e
@@ -62,9 +80,9 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
                 for _cap in cap.value._v:
                     print '   ',_cap.id, _cap.value._v
             print dir(e)
-        
+        self._check_fts_member(dev, 'FRONTEND::tuner_status::allocation_id_csv', _allocation_id)
+
         try:
-            #retval = self.comp.allocateCapacity([frontend_allocation])
             retval = self.comp.allocate([frontend_allocation])
             print retval
         except Exception, e:
@@ -76,6 +94,16 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
                     print '   ',_cap.id, _cap.value._v
             print dir(e)
         dev.deallocate(alloc_response_1[0].alloc_id)
+
+        self._check_fts_member(dev, 'FRONTEND::tuner_status::allocation_id_csv', '')
+
+        alloc_response_3 = self.comp.allocate([frontend_allocation])
+
+        self._check_fts_member(dev, 'FRONTEND::tuner_status::allocation_id_csv', _allocation_id)
+
+        self.comp.deallocate(alloc_response_3[0].alloc_id)
+
+        self._check_fts_member(dev, 'FRONTEND::tuner_status::allocation_id_csv', '')
 
 
 if __name__ == "__main__":

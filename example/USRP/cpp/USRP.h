@@ -63,12 +63,19 @@ class USRP_i : public USRP_base
 
         std::vector<RDC_i*> RDCs;
         std::vector<TDC_i*> TDCs;
+        std::map<std::string, Device_impl*> _delegatedAllocations;
         uhd::usrp::multi_usrp::sptr usrp_device_ptr;
         // Try to synchronize the USRP time to its clock source
         bool _synchronizeClock(const std::string source);
 
         void deviceReferenceSourceChanged(std::string old_value, std::string new_value);
         void updateDeviceReferenceSource(std::string source);
+        CF::Device::Allocations* allocate (const CF::Properties& capacities)
+            throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, 
+                   CF::Device::InsufficientCapacity, CORBA::SystemException);
+        void deallocate (const char* alloc_id) 
+            throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, 
+                   CORBA::SystemException);
 
     private:
         ////////////////////////////////////////
