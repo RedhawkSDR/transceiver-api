@@ -103,6 +103,53 @@ void USRP_i::constructor()
         std::cout<<"len RDC: "<<RDCs.size()<<std::endl;
         std::cout<<"len TDC: "<<TDCs.size()<<std::endl;
     }
+    setPropertyQueryImpl(frontend_tuner_status, this, &USRP_i::get_fts);
+}
+
+std::vector<frontend_tuner_status_struct_struct> USRP_i::get_fts()
+{
+    frontend_tuner_status.resize(0);
+    for (std::vector<RDC_i*>::iterator it=RDCs.begin(); it!=RDCs.end(); it++) {
+        Device_impl* dev = dynamic_cast<Device_impl*>(*it);
+        CF::Properties prop;
+        prop.length(1);
+        prop[0].value = CORBA::Any();
+        prop[0].id = CORBA::string_dup("FRONTEND::tuner_status");
+        if (dev) {
+            dev->query(prop);
+            CORBA::AnySeq *anySeqPtr;
+            frontend_tuner_status_struct_struct tmp;
+            if (prop[0].value >>= anySeqPtr) {
+                CORBA::AnySeq& anySeq = *anySeqPtr;
+                if (anySeq[0] >>= tmp) {
+                    frontend_tuner_status.push_back(tmp);
+                }
+            }
+        }
+    }
+    for (std::vector<TDC_i*>::iterator it=TDCs.begin(); it!=TDCs.end(); it++) {
+        Device_impl* dev = dynamic_cast<Device_impl*>(*it);
+        CF::Properties prop;
+        prop.length(1);
+        prop[0].value = CORBA::Any();
+        prop[0].id = CORBA::string_dup("FRONTEND::tuner_status");
+        if (dev) {
+            dev->query(prop);
+            CORBA::AnySeq *anySeqPtr;
+            frontend_tuner_status_struct_struct tmp;
+            if (prop[0].value >>= anySeqPtr) {
+                CORBA::AnySeq& anySeq = *anySeqPtr;
+                if (anySeq[0] >>= tmp) {
+                    frontend_tuner_status.push_back(tmp);
+                }
+            }
+        }
+    }
+    return frontend_tuner_status;
+}
+
+void USRP_i::frontendTunerStatusChanged(const std::vector<frontend_tuner_status_struct_struct>* oldValue, const std::vector<frontend_tuner_status_struct_struct>* newValue)
+{
 }
 
 bool USRP_i::_synchronizeClock(const std::string source)

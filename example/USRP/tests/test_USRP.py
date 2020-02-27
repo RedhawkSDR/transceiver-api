@@ -67,6 +67,7 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
 
         try:
             alloc_response_1 = dev.allocate([frontend_allocation])
+            print '+++++++++++++', dev.query([CF.DataType(id='FRONTEND::tuner_status', value=any.to_any(None))])
             print alloc_response_1
             self.assertEquals(len(alloc_response_1), 1)
             alloc_response_2 = dev.allocate([frontend_allocation])
@@ -98,6 +99,8 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
         self._check_fts_member(dev, 'FRONTEND::tuner_status::allocation_id_csv', '')
 
         alloc_response_3 = self.comp.allocate([frontend_allocation])
+        print '=============', self.comp.frontend_tuner_status
+        print '+++++++++++++', dev.query([CF.DataType(id='FRONTEND::tuner_status', value=any.to_any(None))])
 
         self._check_fts_member(dev, 'FRONTEND::tuner_status::allocation_id_csv', _allocation_id)
 

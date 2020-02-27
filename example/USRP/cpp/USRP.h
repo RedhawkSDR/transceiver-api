@@ -32,6 +32,7 @@ class USRP_i : public USRP_base
         void constructor();
 
         int serviceFunction();
+        void frontendTunerStatusChanged(const std::vector<frontend_tuner_status_struct_struct>* oldValue, const std::vector<frontend_tuner_status_struct_struct>* newValue);
 
     protected:
         std::string getTunerType(const std::string& allocation_id);
@@ -76,6 +77,7 @@ class USRP_i : public USRP_base
         void deallocate (const char* alloc_id) 
             throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, 
                    CORBA::SystemException);
+        std::vector<frontend_tuner_status_struct_struct> get_fts();
 
     private:
         ////////////////////////////////////////
