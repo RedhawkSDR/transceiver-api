@@ -2,7 +2,7 @@ d36d6c16b841d8b0dfb9d8f237da6e94  main.cpp
 1075cf03f1f5062f7b8ceccf3fd4c25c  TDC/TDC.cpp
 cede96cc893b78faa1d9d3069cd6f8aa  RDC/RDC.cpp
 e07d5647a93f11fb57c86d78b8b86816  TDC/TDC.h
-8cf4da01f104403c86f0cf28b5832844  RDC/RDC_base.cpp
+c4d0d6490acfdcd592683a9cb4bbac98  configure.ac
 6e49e929b686377f1ce14a857f1102d6  TDC/TDC_base.cpp
 574e793b389ffcd0e00790b2d90dd4ef  USRP.h
 36cee3bbe8f674804d08cc45d87643b3  TDC/TDC_struct_props.h
@@ -14,9 +14,9 @@ b9662da4211ac5f6c1e601b4aaee3f39  TDC/TDC_base.h
 b7ec502c9f11c16e3082ad7fbc625487  USRP_base.cpp
 fbbedc07682ed707591b2760b88b63d5  RDC/RDC.h
 8bfcd22353c3a57fee561ad86ee2a56b  reconf
-c4d0d6490acfdcd592683a9cb4bbac98  configure.ac
+8cf4da01f104403c86f0cf28b5832844  RDC/RDC_base.cpp
 48f8de4e5006d3848aefa0a04bbabde2  template_impl.cpp
-bfa789c1c5ae269109cb2dee95ac1345  struct_props.h
+82f326d93f762208fed33cc43458e2a6  struct_props.h
 bc11ff86714389894208c198443959d5  RDC/RDC_base.h
 2b2faa5cfc83438427491f4be5d6ee59  build.sh
 dbf236ad18cb50ad1dc97dd2e5a9723d  RDC/RDC_struct_props.h

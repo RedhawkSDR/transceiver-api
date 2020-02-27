@@ -56,6 +56,10 @@ void RDC_i::constructor()
     ***********************************************************************************/
     this->addChannels(1, "RDC");
     _tuner_number = -1;
+    if (usrp_tuner.lock.cond == NULL)
+        usrp_tuner.lock.cond = new boost::condition_variable;
+    if (usrp_tuner.lock.mutex == NULL)
+        usrp_tuner.lock.mutex = new boost::mutex;
 }
 
 /***********************************************************************************************
@@ -663,7 +667,174 @@ bool RDC_i::deviceSetTuning(const frontend::frontend_tuner_allocation_struct &re
 
     return true if the tuning succeeded, and false if it failed
     ************************************************************/
-    //#warning deviceSetTuning(): Evaluate whether or not a tuner is added  *********
+    //{
+        //exclusive_lock lock(prop_lock);
+    double if_offset = 0.0;
+    double opt_sr = 0.0;
+    double opt_bw = 0.0;
+
+        // check request against USRP specs and analog input
+        const bool complex = true; // USRP operates using complex data
+        try {
+            // check device constraints
+            // see if IF center frequency is set in rfinfo packet
+            double request_if_center_freq = request.center_frequency;
+            /*if(request.tuner_type != "TX" && floatingPointCompare(rfinfo.if_center_freq,0) > 0 && floatingPointCompare(rfinfo.rf_center_freq,rfinfo.if_center_freq) > 0) {
+                if (rfinfo.spectrum_inverted) {
+                    request_if_center_freq = rfinfo.if_center_freq - (request.center_frequency - rfinfo.rf_center_freq);
+                } else {
+                    request_if_center_freq = rfinfo.if_center_freq + (request.center_frequency - rfinfo.rf_center_freq);
+                }
+            }*/
+
+            // check vs. device center freq capability (ensure 0 <= request <= max device capability)
+            if ( !frontend::validateRequest(device_characteristics.freq_min,device_characteristics.freq_max,request_if_center_freq) ) {
+                throw FRONTEND::BadParameterException("INVALID REQUEST -- device capabilities cannot support freq request");
+            }
+
+            // check vs. device bandwidth capability (ensure 0 <= request <= max device capability)
+            if ( !frontend::validateRequest(0,device_characteristics.bandwidth_max,request.bandwidth) ){
+                throw FRONTEND::BadParameterException("INVALID REQUEST -- device capabilities cannot support bw request");
+            }
+
+            // check vs. device sample rate capability (ensure 0 <= request <= max device capability)
+            if ( !frontend::validateRequest(0,device_characteristics.rate_max,request.sample_rate) ){
+                throw FRONTEND::BadParameterException("INVALID REQUEST -- device capabilities cannot support sr request");
+            }
+
+            // calculate overall frequency range of the device (not just CF range)
+            const size_t scaling_factor = (complex) ? 2 : 4; // adjust for complex data
+            const double min_device_freq = device_characteristics.freq_min-(device_characteristics.rate_max/scaling_factor);
+            const double max_device_freq = device_characteristics.freq_max+(device_characteristics.rate_max/scaling_factor);
+
+            // check based on bandwidth
+            double min_requested_freq = request_if_center_freq-(request.bandwidth/2);
+            double max_requested_freq = request_if_center_freq+(request.bandwidth/2);
+
+            if ( !frontend::validateRequest(min_device_freq,max_device_freq,min_requested_freq,max_requested_freq) ) {
+                throw FRONTEND::BadParameterException("INVALID REQUEST -- device capabilities cannot support freq/bw request");
+            }
+
+            // check based on sample rate
+            min_requested_freq = request_if_center_freq-(request.sample_rate/scaling_factor);
+            max_requested_freq = request_if_center_freq+(request.sample_rate/scaling_factor);
+
+            if ( !frontend::validateRequest(min_device_freq,max_device_freq,min_requested_freq,max_requested_freq) ){
+                throw FRONTEND::BadParameterException("INVALID REQUEST -- device capabilities cannot support freq/sr request");
+            }
+            /*if( !frontend::validateRequestVsDevice(request, it->second.rfinfo_pkt, complex, device_characteristics.freq_min, device_characteristics.freq_max,
+                    device_characteristics.bandwidth_max, device_characteristics.rate_max) ){
+                throw FRONTEND::BadParameterException("INVALID REQUEST -- falls outside of analog input or device capabilities");
+            }*/
+        } catch(FRONTEND::BadParameterException& e){
+            RH_INFO(this->_baseLog,"deviceSetTuning|BadParameterException - " << e.msg);
+            return false;
+        }
+
+        // calculate if_offset according to rx rfinfo packet
+        /*if(frontend::floatingPointCompare(it->second.rfinfo_pkt.if_center_freq,0) > 0){
+            if_offset = it->second.rfinfo_pkt.rf_center_freq-it->second.rfinfo_pkt.if_center_freq;
+        }*/
+        // If sample rate is zero (don't care) then use bandwidth for tuner request
+        if(frontend::floatingPointCompare(request.sample_rate,0) <= 0) {
+            opt_sr = optimizeRate(request.bandwidth);
+            RH_DEBUG(this->_baseLog,"deviceSetTuning|sr requested 0|opt_sr="<<opt_sr<<"  requested_bw="<<request.bandwidth)
+        } else {
+            opt_sr = optimizeRate(request.sample_rate);
+        }
+        opt_bw = optimizeBandwidth(request.bandwidth);
+        RH_DEBUG(this->_baseLog,"deviceSetTuning|opt_sr="<<opt_sr<<"  opt_bw="<<opt_bw)
+
+        // cache SDDS-related props for use at end of function
+        /*RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__ << "Cache sdds_network_settings prop for tuner_id=" << tuner_id);
+        if (sdds_network_settings.size() > tuner_id && !sdds_network_settings[tuner_id].ip_address.empty()) {
+            RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__ << "sdds_network_settings has ip address for tuner_id=" << tuner_id);
+            // use sdds_network_settings[tuner_id]
+            sdds_ip = sdds_network_settings[tuner_id].ip_address;
+            sdds_iface = sdds_network_settings[tuner_id].interface;
+            sdds_port = sdds_network_settings[tuner_id].port;
+            sdds_vlan = sdds_network_settings[tuner_id].vlan;
+            tmp_sdds_settings = sdds_settings;
+        } // else leave SDDS disabled for this RX_DIG
+        else {
+            RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__ << "sdds_network_settings does NOT have ip address for tuner_id=" << tuner_id);
+        }*/
+    //} // end scope for prop_lock
+
+    scoped_tuner_lock tuner_lock(usrp_tuner.lock);
+
+    // account for RFInfo_pkt that specifies RF and IF frequencies
+    // since request is always in RF, and USRP may be operating in IF
+    // adjust requested center frequency according to rx rfinfo packet
+
+    // configure hw
+    usrp_device_ptr->set_rx_freq(request.center_frequency-if_offset, _tuner_number);
+    usrp_device_ptr->set_rx_bandwidth(opt_bw, _tuner_number);
+    usrp_device_ptr->set_rx_rate(opt_sr, _tuner_number);
+    /*if (receive_buffer_control.use_dynamic) {
+        if (!receive_buffer_control.dynamic_type) {
+            usrp_tuner.updateBufferSize((size_t)((opt_sr * receive_buffer_control.sample_rate_multiplier) * 2));
+        } else {
+            usrp_tuner.updateBufferSize((size_t)(receive_buffer_control.milliseconds_between_packets / (1000.0 / opt_sr)) * 2);
+        }
+    } else {*/
+        usrp_tuner.setDefaultBufferSize();
+    //}
+
+    // update frontend_tuner_status with actual hw values
+    fts.center_frequency = usrp_device_ptr->get_rx_freq(_tuner_number)+if_offset;
+    fts.bandwidth = usrp_device_ptr->get_rx_bandwidth(_tuner_number);
+    fts.sample_rate = usrp_device_ptr->get_rx_rate(_tuner_number);
+
+    // bandwidth will be reported as the minimum of analog filter bandwidth and the sample rate.
+    fts.bandwidth =std::min(fts.sample_rate,fts.bandwidth);
+
+    // update tolerance
+    fts.bandwidth_tolerance = request.bandwidth_tolerance;
+    fts.sample_rate_tolerance = request.sample_rate_tolerance;
+
+    RH_DEBUG(this->_baseLog,"deviceSetTuning|requested center frequency "<<request.center_frequency<<" and got "<<fts.center_frequency<<" (if_offset="<<if_offset<<")");
+    RH_DEBUG(this->_baseLog,"deviceSetTuning|requested sample rate "<<request.sample_rate<<" and got "<<fts.sample_rate<<" (tolerance="<<fts.sample_rate_tolerance<<")");
+    RH_DEBUG(this->_baseLog,"deviceSetTuning|requested bandwidth: "<<request.bandwidth<<" and got "<<fts.bandwidth<<" (tolerance="<<fts.bandwidth_tolerance<<")");
+
+    // creates a stream id if not already created for this tuner
+    getStreamId();
+
+    /*RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__ << "Set up SDDS output for tuner_id=" << tuner_id);
+
+    // setup sdds output
+    if (!sdds_ip.empty()) {
+        RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__ << "Setting up ip="<<sdds_ip<<" for tuner_id=" << tuner_id);
+        if (dataSDDS_out->setStream(stream_id, sdds_iface, sdds_ip, sdds_port, sdds_vlan,
+                tmp_sdds_settings.attach_user_id, tmp_sdds_settings.ttv_override,
+                tmp_sdds_settings.sdds_endian_representation, tmp_sdds_settings.downstream_give_sri_priority,
+                usrp_tuners[tuner_id].buffer_capacity, tmp_sdds_settings.buffer_size)) {
+            RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__ << "Configured SDDS with stream, now start it... tuner_id=" << tuner_id);
+            dataSDDS_out->startStream(stream_id);
+            RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__ << "Started SDDS stream for tuner_id=" << tuner_id);
+            fts.output_multicast = sdds_ip;
+            fts.output_port = sdds_port;
+            fts.output_vlan = sdds_vlan;
+        } else {
+            // TODO FAIL! what is appropriate exception to throw?
+            LOG_ERROR(this->_baseLog,__PRETTY_FUNCTION__ << "Failed to set up SDDS output with ip="<<sdds_ip<<" for tuner_id=" << tuner_id);
+            throw FRONTEND::FrontendException("Failed to setup SDDS output!");
+        }
+        RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__ << "DONE Setting up ip="<<sdds_ip<<" for tuner_id=" << tuner_id);
+    } else {
+        RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__ << "SDDS output disabled (no ip configured) for tuner_id=" << tuner_id);
+    }*/
+
+    // enable multi-out capability for this stream/allocation/connection
+    /*matchAllocationIdToStreamId(request.allocation_id, stream_id, "dataShort_out");
+    RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__ << "Updated dataShort_out connection table with streamID: "<<stream_id<<" for tuner_id=" << tuner_id);
+
+    if (!sdds_ip.empty()) {
+        matchAllocationIdToStreamId(request.allocation_id, stream_id, "dataSDDS_out");
+        RH_DEBUG(this->_baseLog,__PRETTY_FUNCTION__ << "Updated dataSDDS_out connection table with streamID: "<<stream_id<<" for tuner_id=" << tuner_id);
+    }*/
+
+    usrp_tuner.update_sri = true;
     return true;
 }
 bool RDC_i::deviceDeleteTuning(frontend_tuner_status_struct_struct &fts, size_t tuner_id) {
@@ -674,6 +845,48 @@ bool RDC_i::deviceDeleteTuning(frontend_tuner_status_struct_struct &fts, size_t 
     //#warning deviceDeleteTuning(): Deallocate an allocated tuner  *********
     return true;
 }
+
+double RDC_i::optimizeRate(const double& req_rate){
+    RH_TRACE(this->_baseLog,__PRETTY_FUNCTION__ << " req_rate=" << req_rate);
+
+    if(frontend::floatingPointCompare(req_rate,0) <= 0){
+        return usrp_range.sample_rate.clip(device_characteristics.rate_min);
+    }
+    size_t dec = round(device_characteristics.clock_max/req_rate);
+    double opt_rate = device_characteristics.clock_max / double(dec);
+    double usrp_rate = usrp_range.sample_rate.clip(opt_rate);
+    if(frontend::floatingPointCompare(usrp_rate,req_rate) >=0 ){
+        return usrp_rate;
+    }
+    size_t min_dec = round(device_characteristics.clock_max/device_characteristics.rate_max);
+    for(dec--; dec >= min_dec; dec--){
+        opt_rate = device_characteristics.clock_max / double(dec);
+        usrp_rate = usrp_range.sample_rate.clip(opt_rate);
+        if(frontend::floatingPointCompare(usrp_rate,req_rate) >=0 ){
+            return usrp_rate;
+        }
+    }
+
+    RH_DEBUG(this->_baseLog,"optimizeRate|could not optimize rate, returning req_rate (" << req_rate << ")");
+    return req_rate;
+}
+
+/* acquire prop_lock prior to calling this function */
+double RDC_i::optimizeBandwidth(const double& req_bw){
+    RH_TRACE(this->_baseLog,__PRETTY_FUNCTION__ << " req_bw=" << req_bw);
+
+    if(frontend::floatingPointCompare(req_bw,0) <= 0){
+        return usrp_range.bandwidth.clip(device_characteristics.bandwidth_min);
+    }
+    double usrp_bw = usrp_range.bandwidth.clip(req_bw);
+    if(frontend::floatingPointCompare(usrp_bw,req_bw) >=0 ){
+        return usrp_bw;
+    }
+
+    RH_DEBUG(this->_baseLog,"optimizeBandwidth|could not optimize bw, returning req_bw (" << req_bw << ")");
+    return req_bw;
+}
+
 /*************************************************************
 Functions servicing the tuner control port
 *************************************************************/

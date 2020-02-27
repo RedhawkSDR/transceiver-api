@@ -183,6 +183,8 @@ class RDC_i : public RDC_base
         usrpRangesStruct usrp_range;    // freq/bw/sr/gain ranges supported by each tuner channel
                                         // indices map to tuner_id
                                         // protected by prop_lock
+        double optimizeRate(const double& req_rate);
+        double optimizeBandwidth(const double& req_bw);
 
     private:
         ////////////////////////////////////////

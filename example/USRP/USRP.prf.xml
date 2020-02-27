@@ -48,6 +48,14 @@
       <simple id="FRONTEND::tuner_status::tuner_type" name="tuner_type" type="string">
         <description>Example Tuner Types: TX, RX, CHANNELIZER, DDC, RX_DIGITIZER, RX_DIGITIZIER_CHANNELIZER</description>
       </simple>
+      <simple id="FRONTEND::tuner_status::bandwidth_tolerance" name="bandwidth_tolerance" type="double">
+        <description>Allowable percentage over requested bandwidth. This value is provided by the requester during allocation.</description>
+        <units>%</units>
+      </simple>
+      <simple id="FRONTEND::tuner_status::sample_rate_tolerance" name="sample_rate_tolerance" type="double">
+        <description>Allowable percentage over requested sample rate. This value is provided by the requester during allocation.</description>
+        <units>%</units>
+      </simple>
     </struct>
     <configurationkind kindtype="property"/>
   </structsequence>

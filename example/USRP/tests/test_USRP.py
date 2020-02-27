@@ -61,26 +61,36 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
 
         _allocation_id = 'hello'
         frontend_allocation = tuner_device.createTunerAllocation(tuner_type="RDC",center_frequency=30000000, allocation_id=_allocation_id, returnDict=False)
+        frontend_allocation_gf = tuner_device.createTunerAllocation(tuner_type="RDC",center_frequency=600e6, allocation_id=_allocation_id, returnDict=False)
         allocation_id_csv = 'abc'
 
         self._check_fts_member(dev, 'FRONTEND::tuner_status::allocation_id_csv', '')
 
-        try:
-            alloc_response_1 = dev.allocate([frontend_allocation])
-            print '+++++++++++++', dev.query([CF.DataType(id='FRONTEND::tuner_status', value=any.to_any(None))])
-            print alloc_response_1
-            self.assertEquals(len(alloc_response_1), 1)
-            alloc_response_2 = dev.allocate([frontend_allocation])
-            self.assertEquals(len(alloc_response_2), 0)
-            print alloc_response_2
-        except Exception, e:
-            print e
-            caps = e.capacities
-            for cap in caps:
-                print ' ', cap.id
-                for _cap in cap.value._v:
-                    print '   ',_cap.id, _cap.value._v
-            print dir(e)
+        alloc_response_0 = dev.allocate([frontend_allocation])
+        self.assertEquals(len(alloc_response_0), 0)
+        alloc_response_1 = dev.allocate([frontend_allocation_gf])
+        print '+++++++++++++', dev.query([CF.DataType(id='FRONTEND::tuner_status', value=any.to_any(None))])
+        print alloc_response_1
+        self.assertEquals(len(alloc_response_1), 1)
+        alloc_response_2 = dev.allocate([frontend_allocation_gf])
+        self.assertEquals(len(alloc_response_2), 0)
+        print alloc_response_2
+        #try:
+            #alloc_response_1 = dev.allocate([frontend_allocation])
+            #print '+++++++++++++', dev.query([CF.DataType(id='FRONTEND::tuner_status', value=any.to_any(None))])
+            #print alloc_response_1
+            #self.assertEquals(len(alloc_response_1), 1)
+            #alloc_response_2 = dev.allocate([frontend_allocation])
+            #self.assertEquals(len(alloc_response_2), 0)
+            #print alloc_response_2
+        #except Exception, e:
+            #print e
+            #caps = e.capacities
+            #for cap in caps:
+                #print ' ', cap.id
+                #for _cap in cap.value._v:
+                    #print '   ',_cap.id, _cap.value._v
+            #print dir(e)
         self._check_fts_member(dev, 'FRONTEND::tuner_status::allocation_id_csv', _allocation_id)
 
         try:
@@ -98,7 +108,7 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
 
         self._check_fts_member(dev, 'FRONTEND::tuner_status::allocation_id_csv', '')
 
-        alloc_response_3 = self.comp.allocate([frontend_allocation])
+        alloc_response_3 = self.comp.allocate([frontend_allocation_gf])
         print '=============', self.comp.frontend_tuner_status
         print '+++++++++++++', dev.query([CF.DataType(id='FRONTEND::tuner_status', value=any.to_any(None))])
 

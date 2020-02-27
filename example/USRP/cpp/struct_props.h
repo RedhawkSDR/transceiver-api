@@ -23,11 +23,13 @@ struct frontend_tuner_status_struct_struct : public frontend::default_frontend_t
     }
 
     static const char* getFormat() {
-        return "sddbssdbbs";
+        return "sddbssdbbsdd";
     }
 
     bool scan_mode_enabled;
     bool supports_scan;
+    double bandwidth_tolerance;
+    double sample_rate_tolerance;
 };
 
 inline bool operator>>= (const CORBA::Any& a, frontend_tuner_status_struct_struct& s) {
@@ -64,6 +66,12 @@ inline bool operator>>= (const CORBA::Any& a, frontend_tuner_status_struct_struc
     if (props.contains("FRONTEND::tuner_status::tuner_type")) {
         if (!(props["FRONTEND::tuner_status::tuner_type"] >>= s.tuner_type)) return false;
     }
+    if (props.contains("FRONTEND::tuner_status::bandwidth_tolerance")) {
+        if (!(props["FRONTEND::tuner_status::bandwidth_tolerance"] >>= s.bandwidth_tolerance)) return false;
+    }
+    if (props.contains("FRONTEND::tuner_status::sample_rate_tolerance")) {
+        if (!(props["FRONTEND::tuner_status::sample_rate_tolerance"] >>= s.sample_rate_tolerance)) return false;
+    }
     return true;
 }
 
@@ -89,6 +97,10 @@ inline void operator<<= (CORBA::Any& a, const frontend_tuner_status_struct_struc
     props["FRONTEND::tuner_status::supports_scan"] = s.supports_scan;
  
     props["FRONTEND::tuner_status::tuner_type"] = s.tuner_type;
+ 
+    props["FRONTEND::tuner_status::bandwidth_tolerance"] = s.bandwidth_tolerance;
+ 
+    props["FRONTEND::tuner_status::sample_rate_tolerance"] = s.sample_rate_tolerance;
     a <<= props;
 }
 
@@ -112,6 +124,10 @@ inline bool operator== (const frontend_tuner_status_struct_struct& s1, const fro
     if (s1.supports_scan!=s2.supports_scan)
         return false;
     if (s1.tuner_type!=s2.tuner_type)
+        return false;
+    if (s1.bandwidth_tolerance!=s2.bandwidth_tolerance)
+        return false;
+    if (s1.sample_rate_tolerance!=s2.sample_rate_tolerance)
         return false;
     return true;
 }
