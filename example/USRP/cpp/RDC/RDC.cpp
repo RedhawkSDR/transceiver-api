@@ -835,6 +835,7 @@ bool RDC_i::deviceSetTuning(const frontend::frontend_tuner_allocation_struct &re
     }*/
 
     usrp_tuner.update_sri = true;
+    this->start();
     return true;
 }
 bool RDC_i::deviceDeleteTuning(frontend_tuner_status_struct_struct &fts, size_t tuner_id) {
