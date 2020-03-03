@@ -52,7 +52,7 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
     def testBasicBehavior(self):
         #######################################################################
         # Make sure start and stop can be called without throwing exceptions
-        print self.comp.devices
+        #print self.comp.devices
         for dev in self.comp.devices:
             print dev.label
             if 'RDC' in dev.label:
@@ -69,12 +69,12 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
         alloc_response_0 = dev.allocate([frontend_allocation])
         self.assertEquals(len(alloc_response_0), 0)
         alloc_response_1 = dev.allocate([frontend_allocation_gf])
-        print '+++++++++++++', dev.query([CF.DataType(id='FRONTEND::tuner_status', value=any.to_any(None))])
-        print alloc_response_1
+        #print '+++++++++++++', dev.query([CF.DataType(id='FRONTEND::tuner_status', value=any.to_any(None))])
+        #print alloc_response_1
         self.assertEquals(len(alloc_response_1), 1)
         alloc_response_2 = dev.allocate([frontend_allocation_gf])
         self.assertEquals(len(alloc_response_2), 0)
-        print alloc_response_2
+        #print alloc_response_2
         #try:
             #alloc_response_1 = dev.allocate([frontend_allocation])
             #print '+++++++++++++', dev.query([CF.DataType(id='FRONTEND::tuner_status', value=any.to_any(None))])
@@ -95,7 +95,7 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
 
         try:
             retval = self.comp.allocate([frontend_allocation])
-            print retval
+            #print retval
         except Exception, e:
             print e
             caps = e.capacities
@@ -109,8 +109,24 @@ class DeviceTests(ossie.utils.testing.RHTestCase):
         self._check_fts_member(dev, 'FRONTEND::tuner_status::allocation_id_csv', '')
 
         alloc_response_3 = self.comp.allocate([frontend_allocation_gf])
-        print '=============', self.comp.frontend_tuner_status
-        print '+++++++++++++', dev.query([CF.DataType(id='FRONTEND::tuner_status', value=any.to_any(None))])
+        #print '=============', self.comp.frontend_tuner_status
+        dev_status = dev.query([CF.DataType(id='FRONTEND::tuner_status', value=any.to_any(None))])[0]
+        dev_status_members = dev_status.value._v[0]._v
+        #print '+++++++++++++', dev_status_members
+        parent_stat = self.comp.frontend_tuner_status
+        found_status = False
+        for par in parent_stat:
+            found_status = True
+            for entry in dev_status_members:
+                if entry.id in par.keys():
+                    if entry.value._v != par[entry.id]:
+                        found_status = False
+                    print entry.id, ':  ', entry.value._v
+                if not found_status:
+                    break
+            if found_status:
+                #print '......found a match'
+                break
 
         self._check_fts_member(dev, 'FRONTEND::tuner_status::allocation_id_csv', _allocation_id)
 
