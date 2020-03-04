@@ -644,7 +644,11 @@ void RDC_i::deviceEnable(frontend_tuner_status_struct_struct &fts, size_t tuner_
     Make sure to set the 'enabled' member of fts to indicate that tuner as enabled
     ************************************************************/
     //#warning deviceEnable(): Enable the given tuner  *********
-    fts.enabled = true;
+    scoped_tuner_lock tuner_lock(usrp_tuner.lock);
+    if (rx_autogain_on_tune)
+        trigger_rx_autogain = true;
+    usrpEnable(); // modifies fts.enabled appropriately
+    //fts.enabled = true;
     return;
 }
 void RDC_i::deviceDisable(frontend_tuner_status_struct_struct &fts, size_t tuner_id){
@@ -835,15 +839,106 @@ bool RDC_i::deviceSetTuning(const frontend::frontend_tuner_allocation_struct &re
     }*/
 
     usrp_tuner.update_sri = true;
+    updateDeviceCharacteristics();
     this->start();
     return true;
 }
+
 bool RDC_i::deviceDeleteTuning(frontend_tuner_status_struct_struct &fts, size_t tuner_id) {
     /************************************************************
     modify fts, which corresponds to this->frontend_tuner_status[tuner_id]
     return true if the tune deletion succeeded, and false if it failed
     ************************************************************/
     //#warning deviceDeleteTuning(): Deallocate an allocated tuner  *********
+    return true;
+}
+
+bool RDC_i::usrpEnable()
+{
+    RH_TRACE(this->_baseLog,__PRETTY_FUNCTION__ << " tuner_number=" << _tuner_number );
+
+    bool prev_enabled = frontend_tuner_status[0].enabled;
+    frontend_tuner_status[0].enabled = true;
+
+    if(frontend_tuner_status[0].tuner_type == "TX"){
+
+        //str2rfinfo_map_t::iterator it=rf_port_info_map.begin();
+        /*for (; it!=rf_port_info_map.end(); it++) {
+            if (it->second.tuner_idx == tuner_id && it->second.antenna == frontend_tuner_status[tuner_id].antenna) {
+                break;
+            }
+        }
+        if (it==rf_port_info_map.end()) {
+            RH_ERROR(this->_baseLog,"usrpEnable|tuner_id=" << tuner_id << "No matching RFInfo port found!! Failed enable.");
+            return false;
+        }
+
+        it->second.rfinfo_pkt.rf_center_freq = frontend_tuner_status[tuner_id].center_frequency;
+        it->second.rfinfo_pkt.if_center_freq = frontend_tuner_status[tuner_id].center_frequency;
+        it->second.rfinfo_pkt.rf_bandwidth = frontend_tuner_status[tuner_id].bandwidth;*/
+
+        if(!prev_enabled){
+            /*RH_DEBUG(this->_baseLog,"usrpEnable|tuner_id=" << tuner_id << "Sending updated rfinfo_pkt: port="<<it->first
+                    <<" rf_center_freq="<<it->second.rfinfo_pkt.rf_center_freq
+                    <<" if_center_freq="<<it->second.rfinfo_pkt.if_center_freq
+                    <<" bandwidth="<<it->second.rfinfo_pkt.rf_bandwidth);*/
+            /*if (it->first == "RFInfoTX_out")
+                RFInfoTX_out->rfinfo_pkt(it->second.rfinfo_pkt);
+            else if (it->first == "RFInfoTX_out2")
+                RFInfoTX_out2->rfinfo_pkt(it->second.rfinfo_pkt);*/
+            usrp_tuner.update_sri = false;
+        }
+
+        /*if (usrp_tx_streamers[frontend_tuner_status[tuner_id].tuner_number].get() == NULL){
+            usrpCreateTxStream<short>(tuner_id); // assume short for now since we don't know until data is received over a port
+            RH_TRACE(this->_baseLog,"usrpEnable|tuner_id=" << tuner_id << " got tx_streamer[" << frontend_tuner_status[tuner_id].tuner_number << "]");
+        }*/
+
+    } else {
+
+        // get stream id (creates one if not already created for this tuner)
+        //_stream_id = getStreamId(tuner_id);
+
+        if(!prev_enabled){
+            RH_DEBUG(this->_baseLog,"USRP_UHD_i::usrpEnable|setting update_sri flag for tuner: "<< _tuner_number <<" with stream id: "<< _stream_id);
+
+            RH_DEBUG(this->_baseLog,"USRP_UHD_i::usrpEnable|creating SRI for tuner: "<< _tuner_number <<" with stream id: "<< _stream_id);
+            BULKIO::StreamSRI sri = create(_stream_id, frontend_tuner_status[0]);
+            sri.mode = 1; // complex
+            //printSRI(&sri,"USRP_UHD_i::usrpEnable SRI"); // DEBUG
+            dataShort_out->pushSRI(sri);
+            //dataSDDS_out->pushSRI(sri);
+            usrp_tuner.update_sri = false;
+        }
+
+        if (usrp_rx_streamer.get() == NULL){
+            usrpCreateRxStream();
+            //RH_TRACE(this->_baseLog,"usrpEnable|tuner_id=" << tuner_id << " got rx_streamer[" << frontend_tuner_status[tuner_id].tuner_number << "]");
+        }
+
+        // check for lo_lock
+        try{
+            //boost::system_time m1 = boost::get_system_time();
+            size_t i;
+            for(i=0; i<10 && !usrp_device_ptr->get_rx_sensor("lo_locked", _tuner_number).to_bool(); i++){
+                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            }
+            //boost::system_time m2 = boost::get_system_time();
+            std::ostringstream os;
+            bool lo_status = usrp_device_ptr->get_rx_sensor("lo_locked", this->_tuner_number).to_bool();
+            //os << "Tuner number: " << _tuner_number << " lo_locked=" << lo_status << ", lo_locked status resolution took " <<  m2 - m1 << " seconds, number of retries=" << i; 
+            os << "Tuner number: " << _tuner_number << " lo_locked=" << lo_status << ", lo_locked status resolution took " <<  i << " number of retries"; 
+            RH_TRACE(this->_baseLog, os.str() );
+        } catch(...){
+            sleep(1);
+        }
+
+        uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+        stream_cmd.stream_now = true;
+        usrp_device_ptr->issue_stream_cmd(stream_cmd, _tuner_number);
+        //usrp_device_ptr->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS, frontend_tuner_status[tuner_id].tuner_number);
+        RH_DEBUG(this->_baseLog,"usrpEnable|tuner_number=" << _tuner_number << " started stream_id=" << _stream_id);
+    }
     return true;
 }
 

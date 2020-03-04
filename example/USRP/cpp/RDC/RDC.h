@@ -77,7 +77,6 @@ struct usrpTunerStruct {
                 newVal = newVal + 1024 - remainder;
             }
             if (newVal <= max_samples_per_push) {
-                std::cout << "Updating buffer capacity to " << newVal << " samples." << std::endl;
                 buffer_capacity = newVal;
                 output_buffer.resize( buffer_capacity );
                 retVal = true;
@@ -180,6 +179,7 @@ class RDC_i : public RDC_base
         float auto_gain();
         void updateDeviceRxGain(double gain, bool lock);
         void getStreamId();
+        bool usrpEnable();
         usrpRangesStruct usrp_range;    // freq/bw/sr/gain ranges supported by each tuner channel
                                         // indices map to tuner_id
                                         // protected by prop_lock
