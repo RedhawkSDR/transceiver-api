@@ -89,7 +89,7 @@ struct usrpTunerStruct {
         return retVal;
     }
 
-    std::vector<short> output_buffer;
+    redhawk::buffer<short> output_buffer;
     size_t buffer_capacity; // num samps buffer can hold
     size_t buffer_size; // num samps in buffer
     BULKIO::PrecisionUTCTime output_buffer_time;

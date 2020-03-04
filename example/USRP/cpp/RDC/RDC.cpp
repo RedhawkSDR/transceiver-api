@@ -342,6 +342,7 @@ int RDC_i::serviceFunction()
 
         // set stream id (creates one if not already created for this tuner)
         getStreamId();
+        bulkio::OutShortStream outputStream = dataShort_out->getStream(_stream_id);
 
         // Send updated SRI
         if (usrp_tuner.update_sri){
@@ -349,8 +350,13 @@ int RDC_i::serviceFunction()
             //BULKIO::StreamSRI sri = bulkio::sri::create(_stream_id, frontend_tuner_status[0], -1.0);
             BULKIO::StreamSRI sri = this->create(_stream_id, frontend_tuner_status[0], -1.0);
             sri.mode = 1; // complex
+            if (!outputStream) {
+                outputStream = dataShort_out->createStream(sri);
+            } else {
+                outputStream.sri(sri);
+            }
             //printSRI(&sri,"USRP_UHD_i::serviceFunctionReceive SRI"); // DEBUG
-            dataShort_out->pushSRI(sri);
+            //dataShort_out->pushSRI(sri);
             //dataSDDS_out->pushSRI(sri);
             usrp_tuner.update_sri = false;
         }
@@ -361,9 +367,10 @@ int RDC_i::serviceFunction()
             usrp_tuner.output_buffer.resize(usrp_tuner.buffer_size);
         }
         // Only push on active ports
-        if(dataShort_out->isActive()){
+        outputStream.write(usrp_tuner.output_buffer, usrp_tuner.output_buffer_time);
+        /*if(dataShort_out->isActive()){
             dataShort_out->pushPacket(usrp_tuner.output_buffer, usrp_tuner.output_buffer_time, false, _stream_id);
-        }
+        }*/
         // Don't check isActive because could be relying on attach override rather than a connection
         // It doesn't actually do anything if the tuner/stream isn't configured for sdds already anyway
         //dataSDDS_out->pushPacket(usrp_tuner.output_buffer, usrp_tuner.output_buffer_time, false, _stream_id);
@@ -430,7 +437,8 @@ long RDC_i::usrpReceive(double timeout){
     size_t num_samps = 0;
     try{
         num_samps = usrp_rx_streamer->recv(
-            &usrp_tuner.output_buffer.at(usrp_tuner.buffer_size), // address of buffer to start filling data
+            &usrp_tuner.output_buffer[usrp_tuner.buffer_size], // address of buffer to start filling data
+            //&usrp_tuner.output_buffer.at(usrp_tuner.buffer_size), // address of buffer to start filling data
             samps_to_rx,
             _metadata);
     } catch(...){
@@ -907,8 +915,13 @@ bool RDC_i::usrpEnable()
             RH_DEBUG(this->_baseLog,"USRP_UHD_i::usrpEnable|creating SRI for tuner: "<< _tuner_number <<" with stream id: "<< _stream_id);
             BULKIO::StreamSRI sri = create(_stream_id, frontend_tuner_status[0]);
             sri.mode = 1; // complex
-            //printSRI(&sri,"USRP_UHD_i::usrpEnable SRI"); // DEBUG
-            dataShort_out->pushSRI(sri);
+            bulkio::OutShortStream outputStream = dataShort_out->getStream(_stream_id);
+            if (!outputStream) {
+                outputStream = dataShort_out->createStream(sri);
+            } else {
+                outputStream.sri(sri);
+            }
+            //dataShort_out->pushSRI(sri);
             //dataSDDS_out->pushSRI(sri);
             usrp_tuner.update_sri = false;
         }
