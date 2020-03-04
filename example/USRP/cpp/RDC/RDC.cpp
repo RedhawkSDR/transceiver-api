@@ -55,6 +55,8 @@ void RDC_i::constructor()
      type. The string for the request must match the string in the tuner status.
     ***********************************************************************************/
     this->addChannels(1, "RDC");
+    this->setDataPort(dataShort_out->_this());
+    this->setControlPort(DigitalTuner_in->_this());
     _tuner_number = -1;
     if (usrp_tuner.lock.cond == NULL)
         usrp_tuner.lock.cond = new boost::condition_variable;
