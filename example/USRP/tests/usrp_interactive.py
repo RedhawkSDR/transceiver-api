@@ -9,6 +9,10 @@ _allocation_id = 'hello'
 frontend_allocation_gf = tuner_device.createTunerAllocation(tuner_type="RDC",center_frequency=600e6, allocation_id=_allocation_id, returnDict=False)
 alloc_response_1 = src.allocate([frontend_allocation_gf])
 print alloc_response_1[0].data_port
+dev=src.devices[0]
+center_freq = alloc_response_1[0].control_port.getTunerCenterFrequency(_allocation_id)
+alloc_response_1[0].control_port.setTunerCenterFrequency('hello', center_freq+100)
+
 snk=sb.StreamSink()
 alloc_response_1[0].data_port.connectPort(snk.getPort('shortIn'), 'connection_id')
 sb.start()

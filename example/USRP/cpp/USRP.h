@@ -64,7 +64,7 @@ class USRP_i : public USRP_base
 
         std::vector<RDC_i*> RDCs;
         std::vector<TDC_i*> TDCs;
-        std::map<std::string, Device_impl*> _delegatedAllocations;
+        std::map<std::string, CF::Device::Allocations_var> _delegatedAllocations;
         uhd::usrp::multi_usrp::sptr usrp_device_ptr;
         // Try to synchronize the USRP time to its clock source
         bool _synchronizeClock(const std::string source);

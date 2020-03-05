@@ -602,7 +602,7 @@ throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CF::Device::Insuff
     for (std::vector<RDC_i*>::iterator it=RDCs.begin(); it!=RDCs.end(); it++) {
         result = (*it)->allocate(local_capacities);
         if (result->length() > 0) {
-            _delegatedAllocations[allocation_id] = *it;
+            _delegatedAllocations[allocation_id] = result;
             return result._retn();
         }
     }
@@ -610,7 +610,7 @@ throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CF::Device::Insuff
     for (std::vector<TDC_i*>::iterator it=TDCs.begin(); it!=TDCs.end(); it++) {
         result = (*it)->allocate(local_capacities);
         if (result->length() > 0) {
-            _delegatedAllocations[allocation_id] = *it;
+            _delegatedAllocations[allocation_id] = result;
             return result._retn();
         }
     }
@@ -623,8 +623,8 @@ throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CORBA::SystemExcep
 {
     std::string _alloc_id = ossie::corba::returnString(alloc_id);
     if (_delegatedAllocations.find(_alloc_id) != _delegatedAllocations.end()) {
-        Device_impl* dev = dynamic_cast<Device_impl*>(_delegatedAllocations[_alloc_id]);
-        if (dev) {
+        for (size_t i=0; i<_delegatedAllocations[_alloc_id]->length(); i++) {
+            CF::Device_ptr dev = _delegatedAllocations[_alloc_id][i].device_ref;
             dev->deallocate(alloc_id);
             return;
         }
@@ -671,6 +671,8 @@ Functions servicing the tuner control port
 *************************************************************/
 std::string USRP_i::getTunerType(const std::string& allocation_id) {
     long idx = getTunerMapping(allocation_id);
+    if (idx < 0) {
+    }
     if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
     return frontend_tuner_status[idx].tuner_type;
 }
