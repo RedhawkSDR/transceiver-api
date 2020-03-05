@@ -87,7 +87,7 @@ void USRP_i::constructor()
     uhd::device_addrs_t dev_addrs = uhd::device::find(hint);
     if (dev_addrs.size() > 1) {
         std::stringstream errstr;
-        errstr << "Unambiguous USRP. Found "<<dev_addrs.size()<<" instead of just 1. Try setting the ip_address property";
+        errstr << "Ambiguous USRP. Found "<<dev_addrs.size()<<" instead of just 1. Try setting the ip_address property";
         RH_ERROR(this->_baseLog, errstr.str());
         CF::StringSequence messages;
         ossie::corba::push_back(messages, errstr.str().c_str());
