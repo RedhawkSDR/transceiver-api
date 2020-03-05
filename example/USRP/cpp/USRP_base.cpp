@@ -120,6 +120,14 @@ void USRP_base::loadProperties()
                 "external",
                 "property");
 
+    addProperty(ip_address,
+                "ip_address",
+                "",
+                "readwrite",
+                "",
+                "external",
+                "property");
+
     addProperty(frontend_coherent_feeds,
                 "FRONTEND::coherent_feeds",
                 "frontend_coherent_feeds",

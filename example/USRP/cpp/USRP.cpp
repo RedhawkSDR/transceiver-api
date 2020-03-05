@@ -81,22 +81,33 @@ void USRP_i::constructor()
     addPropertyListener(device_reference_source_global, this, &USRP_i::deviceReferenceSourceChanged);
 
     uhd::device_addr_t hint;
+    if (not this->ip_address.empty()) {
+        hint["addr"] = this->ip_address;
+    }
     uhd::device_addrs_t dev_addrs = uhd::device::find(hint);
     if (dev_addrs.size() > 1) {
         std::stringstream errstr;
-        errstr << "Unambiguous USRP. Found "<<dev_addrs.size()<<" instead of just 1";
+        errstr << "Unambiguous USRP. Found "<<dev_addrs.size()<<" instead of just 1. Try setting the ip_address property";
         RH_ERROR(this->_baseLog, errstr.str());
         CF::StringSequence messages;
         ossie::corba::push_back(messages, errstr.str().c_str());
         throw CF::LifeCycle::InitializeError(messages);
     } else if (dev_addrs.empty()) {
-        std::string errstr("No USRP found");
+        std::string errstr;
+        if (this->ip_address.empty()) {
+            errstr = "No USRP found";
+        } else {
+            std::stringstream serrstr;
+            serrstr << "The specified IP address for this USRP ("<<this->ip_address<<") is not responsive";
+            errstr = serrstr.str();
+        }
         RH_ERROR(this->_baseLog, errstr);
         CF::StringSequence messages;
         ossie::corba::push_back(messages, errstr.c_str());
         throw CF::LifeCycle::InitializeError(messages);
     }
     usrp_device_ptr = uhd::usrp::multi_usrp::make(dev_addrs[0]);
+
     if (usrp_device_ptr.get() != NULL) {
         const size_t num_rx_channels = usrp_device_ptr->get_rx_num_channels();
         const size_t num_tx_channels = usrp_device_ptr->get_tx_num_channels();

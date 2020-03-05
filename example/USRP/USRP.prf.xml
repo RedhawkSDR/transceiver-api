@@ -157,4 +157,9 @@ False: Does not need control and can just attach to any currently tasked device 
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
+  <simple id="ip_address" mode="readwrite" type="string">
+    <description>USRP IP address (leave empty to search for available devices)</description>
+    <value></value>
+    <kind kindtype="property"/>
+  </simple>
 </properties>
