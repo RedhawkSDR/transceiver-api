@@ -12,6 +12,8 @@ print alloc_response_1[0].data_port
 dev=src.devices[0]
 center_freq = alloc_response_1[0].control_port.getTunerCenterFrequency(_allocation_id)
 alloc_response_1[0].control_port.setTunerCenterFrequency('hello', center_freq+100)
+src.ports[2].ref.getTunerCenterFrequency(_allocation_id)
+src.frontend_tuner_status[0]
 
 snk=sb.StreamSink()
 alloc_response_1[0].data_port.connectPort(snk.getPort('shortIn'), 'connection_id')
