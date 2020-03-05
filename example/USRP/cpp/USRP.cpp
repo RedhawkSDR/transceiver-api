@@ -82,6 +82,20 @@ void USRP_i::constructor()
 
     uhd::device_addr_t hint;
     uhd::device_addrs_t dev_addrs = uhd::device::find(hint);
+    if (dev_addrs.size() > 1) {
+        std::stringstream errstr;
+        errstr << "Unambiguous USRP. Found "<<dev_addrs.size()<<" instead of just 1";
+        RH_ERROR(this->_baseLog, errstr.str());
+        CF::StringSequence messages;
+        ossie::corba::push_back(messages, errstr.str().c_str());
+        throw CF::LifeCycle::InitializeError(messages);
+    } else if (dev_addrs.empty()) {
+        std::string errstr("No USRP found");
+        RH_ERROR(this->_baseLog, errstr);
+        CF::StringSequence messages;
+        ossie::corba::push_back(messages, errstr.c_str());
+        throw CF::LifeCycle::InitializeError(messages);
+    }
     usrp_device_ptr = uhd::usrp::multi_usrp::make(dev_addrs[0]);
     if (usrp_device_ptr.get() != NULL) {
         const size_t num_rx_channels = usrp_device_ptr->get_rx_num_channels();
