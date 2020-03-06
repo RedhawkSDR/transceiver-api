@@ -124,6 +124,8 @@ void USRP_i::constructor()
             std::ostringstream tdc_name;
             tdc_name << "TDC_" << i+1;
             TDCs.push_back(this->addChild<TDC_i>(tdc_name.str()));
+            TDCs.back()->setTunerNumber(i);
+            TDCs.back()->setUHDptr(usrp_device_ptr);
         }
         std::cout<<"len RDC: "<<RDCs.size()<<std::endl;
         std::cout<<"len TDC: "<<TDCs.size()<<std::endl;

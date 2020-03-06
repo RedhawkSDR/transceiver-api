@@ -55,6 +55,8 @@ class TDC_i : public TDC_base
                                         // indices map to tuner_id
                                         // protected by prop_lock
         size_t usrp_tx_streamer_typesize;  // leftover from when usrp input had multiple types
+        double optimizeRate(const double& req_rate);
+        double optimizeBandwidth(const double& req_bw);
 
     private:
         ////////////////////////////////////////
