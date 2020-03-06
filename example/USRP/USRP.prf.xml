@@ -223,5 +223,11 @@ False: Does not need control and can just attach to any currently tasked device 
         <action type="external"/>
       </simple>
     <configurationkind kindtype="property"/>
-    </struct>
+  </struct>
+  <simple id="device_mode" mode="readwrite" name="device_mode" type="string">
+    <description>16bit or 8bit</description>
+    <value>16bit</value>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
 </properties>

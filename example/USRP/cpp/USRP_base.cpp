@@ -129,6 +129,15 @@ void USRP_base::loadProperties()
                 "external",
                 "property");
 
+    addProperty(device_mode,
+                "16bit",
+                "device_mode",
+                "device_mode",
+                "readwrite",
+                "",
+                "external",
+                "property");
+
     addProperty(frontend_coherent_feeds,
                 "FRONTEND::coherent_feeds",
                 "frontend_coherent_feeds",

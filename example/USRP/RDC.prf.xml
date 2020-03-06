@@ -196,5 +196,5 @@ False: Does not need control and can just attach to any currently tasked device 
         <action type="external"/>
       </simple>
     <configurationkind kindtype="property"/>
-    </struct>
+  </struct>
 </properties>

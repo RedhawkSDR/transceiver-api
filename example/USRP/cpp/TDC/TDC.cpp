@@ -110,6 +110,87 @@ void TDC_i::updateDeviceCharacteristics() {
     }
 }
 
+bool TDC_i::usrpEnable()
+{
+    RH_TRACE(this->_baseLog,__PRETTY_FUNCTION__ << " tuner_number=" << _tuner_number );
+
+    bool prev_enabled = frontend_tuner_status[0].enabled;
+    frontend_tuner_status[0].enabled = true;
+
+    //str2rfinfo_map_t::iterator it=rf_port_info_map.begin();
+    /*for (; it!=rf_port_info_map.end(); it++) {
+        if (it->second.tuner_idx == tuner_id && it->second.antenna == frontend_tuner_status[tuner_id].antenna) {
+            break;
+        }
+    }
+    if (it==rf_port_info_map.end()) {
+        RH_ERROR(this->_baseLog,"usrpEnable|tuner_id=" << tuner_id << "No matching RFInfo port found!! Failed enable.");
+        return false;
+    }
+
+    it->second.rfinfo_pkt.rf_center_freq = frontend_tuner_status[tuner_id].center_frequency;
+    it->second.rfinfo_pkt.if_center_freq = frontend_tuner_status[tuner_id].center_frequency;
+    it->second.rfinfo_pkt.rf_bandwidth = frontend_tuner_status[tuner_id].bandwidth;*/
+
+    if(!prev_enabled){
+        /*RH_DEBUG(this->_baseLog,"usrpEnable|tuner_id=" << tuner_id << "Sending updated rfinfo_pkt: port="<<it->first
+                <<" rf_center_freq="<<it->second.rfinfo_pkt.rf_center_freq
+                <<" if_center_freq="<<it->second.rfinfo_pkt.if_center_freq
+                <<" bandwidth="<<it->second.rfinfo_pkt.rf_bandwidth);*/
+        /*if (it->first == "RFInfoTX_out")
+            RFInfoTX_out->rfinfo_pkt(it->second.rfinfo_pkt);
+        else if (it->first == "RFInfoTX_out2")
+            RFInfoTX_out2->rfinfo_pkt(it->second.rfinfo_pkt);*/
+        usrp_tuner.update_sri = false;
+    }
+
+    if (usrp_tx_streamer.get() == NULL){
+        usrpCreateTxStream(); // assume short for now since we don't know until data is received over a port
+        RH_TRACE(this->_baseLog,"usrpEnable|tuner_number=" << _tuner_number << " got tx_streamer[" << _tuner_number << "]");
+    }
+    return true;
+}
+
+bool TDC_i::usrpCreateTxStream(){
+    RH_TRACE(this->_baseLog,__PRETTY_FUNCTION__);
+    //cleanup possible old one
+    usrp_tx_streamer.reset();
+
+    /*!
+     * The CPU format is a string that describes the format of host memory.
+     * Conversions for the following CPU formats have been implemented:
+     *  - fc64 - complex<double>
+     *  - fc32 - complex<float>
+     *  - sc16 - complex<int16_t>
+     *  - sc8 - complex<int8_t>
+     */
+
+    std::string cpu_format = "sc16";
+    usrp_tx_streamer_typesize = sizeof(short);
+    /*if (sizeof (PACKET_ELEMENT_TYPE) == 4){
+        cpu_format = "fc32"; // enable sending dataFloat with "fc32"
+        usrp_tx_streamer_typesize[frontend_tuner_status[tuner_id].tuner_number] = sizeof(PACKET_ELEMENT_TYPE);
+    }
+    RH_DEBUG(this->_baseLog,"usrpCreateTxStream|using cpu_format" << cpu_format);*/
+
+    /*!
+     * The OTW format is a string that describes the format over-the-wire.
+     * The following over-the-wire formats have been implemented:
+     *  - sc16 - Q16 I16
+     *  - sc8 - Q8_1 I8_1 Q8_0 I8_0
+     */
+    std::string wire_format = "sc16";
+    if(device_mode == "8bit")
+        wire_format = "sc8"; // enable 8-bit mode with "sc8"
+    RH_DEBUG(this->_baseLog,"usrpCreateTxStream|using wire_format" << wire_format);
+
+    uhd::stream_args_t stream_args(cpu_format, wire_format);
+    stream_args.channels.push_back(_tuner_number);
+    stream_args.args["noclear"] = "1";
+    usrp_tx_streamer = usrp_device_ptr->get_tx_stream(stream_args);
+    return true;
+}
+
 /***********************************************************************************************
 
     Basic functionality:
@@ -364,8 +445,77 @@ void TDC_i::updateDeviceCharacteristics() {
 int TDC_i::serviceFunction()
 {
     RH_DEBUG(this->_baseLog, "serviceFunction() example log message");
-    
-    return NOOP;
+
+    usrpTransmit();
+
+    return NORMAL;
+}
+
+bool TDC_i::usrpTransmit(){
+    RH_TRACE(this->_baseLog,__PRETTY_FUNCTION__);
+
+    bulkio::StreamQueue<bulkio::InShortPort>& queue = dataShortTX_in->getQueue();
+    queue.update_ignore_error(true);
+    queue.update_ignore_timestamp(true);
+
+    if(usrp_tuner.update_sri){
+
+        /*str2rfinfo_map_t::iterator it=rf_port_info_map.begin();
+        for (; it!=rf_port_info_map.end(); it++) {
+            if (it->second.tuner_idx == tuner_id && it->second.antenna == frontend_tuner_status[tuner_id].antenna) {
+                break;
+            }
+        }
+        if (it==rf_port_info_map.end()) {
+            LOG_ERROR(USRP_UHD_i,"usrpTransmit|tuner_id=" << tuner_id << "No matching RFInfo port found!! Failed transmit.");
+            return false;
+        }
+        it->second.rfinfo_pkt.rf_center_freq = frontend_tuner_status[tuner_id].center_frequency;
+        it->second.rfinfo_pkt.if_center_freq = frontend_tuner_status[tuner_id].center_frequency;
+        it->second.rfinfo_pkt.rf_bandwidth = frontend_tuner_status[tuner_id].bandwidth;
+        LOG_DEBUG(USRP_UHD_i,"usrpTransmit|tuner_id=" << tuner_id << "Sending updated rfinfo_pkt: RFInfo port="<<it->first
+                <<" rf_center_freq="<<it->second.rfinfo_pkt.rf_center_freq
+                <<" if_center_freq="<<it->second.rfinfo_pkt.if_center_freq
+                <<" bandwidth="<<it->second.rfinfo_pkt.rf_bandwidth);
+
+        if (it->first == "RFInfoTX_out")
+            RFInfoTX_out->rfinfo_pkt(it->second.rfinfo_pkt);
+        else if (it->first == "RFInfoTX_out2")
+            RFInfoTX_out2->rfinfo_pkt(it->second.rfinfo_pkt);*/
+        usrp_tuner.update_sri = false;
+    }
+
+    std::vector<bulkio::StreamStatus> error_status;
+    BULKIO::PrecisionUTCTime ts_now = bulkio::time::utils::now();
+    //block = queue.getNextBlock(ts_now, error_status, timeout, time_window);
+    bulkio::ShortDataBlock block = queue.getNextBlock(ts_now, error_status);
+
+    //Sets basic data type. IE- float for float port, short for short port
+    //typedef typeof (packet->dataBuffer[0]) PACKET_ELEMENT_TYPE;
+    /*if (packet->SRI.mode != 1) {
+        LOG_ERROR(USRP_UHD_i,"USRP device requires complex data.  Real data type received.");
+        delete packet;
+        return false;
+    }*/
+
+    if (block) {
+        if (block.size() != 0) {
+            uhd::tx_metadata_t _metadata;
+            _metadata.start_of_burst = false;
+            _metadata.end_of_burst = false;
+
+            if (usrp_tx_streamer.get() == NULL || sizeof(short) != usrp_tx_streamer_typesize){
+                usrpCreateTxStream();
+                RH_DEBUG(this->_baseLog,"usrpTransmit|tuner_number=" << _tuner_number << " got tx_streamer[" << _tuner_number << "]");
+            }
+            // Send in size/2 because it is complex
+            if( usrp_tx_streamer->send(&block.buffer()[0], block.buffer().size() / 2, _metadata, 0.1) != block.buffer().size() / 2) {
+                RH_WARN(this->_baseLog, "WARNING: THE USRP WAS UNABLE TO TRANSMIT " << block.buffer().size() / 2 << " NUMBER OF SAMPLES!");
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 /*************************************************************

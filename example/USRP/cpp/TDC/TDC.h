@@ -46,12 +46,15 @@ class TDC_i : public TDC_base
         uhd::tx_streamer::sptr usrp_tx_streamer;
         usrpTunerStruct usrp_tuner; // data buffer/timestamps, lock
         bool usrpCreateTxStream();
+        bool usrpEnable();
+        bool usrpTransmit();
         int _tuner_number;
         std::string _stream_id;
         uhd::usrp::multi_usrp::sptr usrp_device_ptr;
         usrpRangesStruct usrp_range;    // freq/bw/sr/gain ranges supported by each tuner channel
                                         // indices map to tuner_id
                                         // protected by prop_lock
+        size_t usrp_tx_streamer_typesize;  // leftover from when usrp input had multiple types
 
     private:
         ////////////////////////////////////////

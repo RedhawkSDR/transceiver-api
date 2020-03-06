@@ -56,6 +56,8 @@ class USRP_base : public frontend::FrontendScanningTunerDevice<frontend_tuner_st
         bool clock_sync;
         /// Property: ip_address
         std::string ip_address;
+        /// Property: device_mode
+        std::string device_mode;
         /// Property: frontend_coherent_feeds
         std::vector<std::string> frontend_coherent_feeds;
         /// Property: device_characteristics
