@@ -119,6 +119,15 @@ void TDC_base::loadProperties()
     frontend_listener_allocation = frontend::frontend_listener_allocation_struct();
     frontend_transmitter_allocation = frontend::frontend_transmitter_allocation_struct();
     frontend_tuner_allocation = frontend::frontend_tuner_allocation_struct();
+    addProperty(device_characteristics,
+                device_characteristics_struct(),
+                "device_characteristics",
+                "device_characteristics",
+                "readonly",
+                "",
+                "external",
+                "property");
+
 }
 
 CF::Properties* TDC_base::getTunerStatus(const std::string& allocation_id)

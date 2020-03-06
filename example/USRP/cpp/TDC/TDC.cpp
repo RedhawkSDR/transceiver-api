@@ -55,6 +55,59 @@ void TDC_i::constructor()
      type. The string for the request must match the string in the tuner status.
     ***********************************************************************************/
     this->addChannels(1, "TDC");
+    this->setDataPort(dataShortTX_in->_this());
+    this->setControlPort(DigitalTuner_in->_this());
+    _tuner_number = -1;
+    if (usrp_tuner.lock.cond == NULL)
+        usrp_tuner.lock.cond = new boost::condition_variable;
+    if (usrp_tuner.lock.mutex == NULL)
+        usrp_tuner.lock.mutex = new boost::mutex;
+}
+
+void TDC_i::setTunerNumber(size_t tuner_number) {
+    this->_tuner_number = tuner_number;
+    this->updateDeviceCharacteristics();
+}
+
+void TDC_i::setUHDptr(const uhd::usrp::multi_usrp::sptr parent_device_ptr) {
+    usrp_device_ptr = parent_device_ptr;
+    this->updateDeviceCharacteristics();
+}
+
+void TDC_i::updateDeviceCharacteristics() {
+    if ((usrp_device_ptr.get() != NULL) and (_tuner_number != -1))  {
+        device_characteristics.tuner_type = "TDC";
+        device_characteristics.ch_name = usrp_device_ptr->get_tx_subdev_name(_tuner_number);
+        device_characteristics.antenna = usrp_device_ptr->get_tx_antenna(_tuner_number);
+        device_characteristics.available_antennas = usrp_device_ptr->get_tx_antennas(_tuner_number);
+        device_characteristics.freq_current = usrp_device_ptr->get_tx_freq(_tuner_number);
+        device_characteristics.bandwidth_current = usrp_device_ptr->get_tx_bandwidth(_tuner_number);
+        device_characteristics.rate_current = usrp_device_ptr->get_tx_rate(_tuner_number);
+
+        usrp_range.bandwidth = usrp_device_ptr->get_tx_bandwidth_range(_tuner_number);
+        usrp_range.sample_rate = usrp_device_ptr->get_tx_rates(_tuner_number);
+        device_characteristics.gain_current = usrp_device_ptr->get_tx_gain(_tuner_number);
+        usrp_range.gain = usrp_device_ptr->get_tx_gain_range(_tuner_number);
+        usrp_range.frequency = usrp_device_ptr->get_tx_freq_range(_tuner_number);
+
+        device_characteristics.bandwidth_min = usrp_range.bandwidth.start();
+        device_characteristics.bandwidth_max = usrp_range.bandwidth.stop();
+        device_characteristics.rate_min = usrp_range.sample_rate.start();
+        device_characteristics.rate_max = usrp_range.sample_rate.stop();
+        device_characteristics.gain_min = usrp_range.gain.start();
+        device_characteristics.gain_max = usrp_range.gain.stop();
+        device_characteristics.freq_min = usrp_range.frequency.start();
+        device_characteristics.freq_max = usrp_range.frequency.stop();
+
+        try {
+            std::vector<double> rates = usrp_device_ptr->get_tx_dboard_iface(_tuner_number)->get_clock_rates(uhd::usrp::dboard_iface::UNIT_RX);
+            device_characteristics.clock_min = rates.back();
+            device_characteristics.clock_max = rates.front();
+        } catch (...) {
+            device_characteristics.clock_min = 0;
+            device_characteristics.clock_max = 2*device_characteristics.rate_max;
+        }
+    }
 }
 
 /***********************************************************************************************

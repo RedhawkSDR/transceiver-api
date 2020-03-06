@@ -2,6 +2,8 @@
 #define TDC_I_IMPL_H
 
 #include "TDC_base.h"
+#include <uhd/usrp/multi_usrp.hpp>
+#include "../uhd_access.h"
 
 class TDC_i : public TDC_base
 {
@@ -16,6 +18,10 @@ class TDC_i : public TDC_base
         void constructor();
 
         int serviceFunction();
+
+        void setTunerNumber(size_t tuner_number);
+        void setUHDptr(const uhd::usrp::multi_usrp::sptr parent_device_ptr);
+        void updateDeviceCharacteristics();
 
     protected:
         std::string getTunerType(const std::string& allocation_id);
@@ -36,6 +42,17 @@ class TDC_i : public TDC_base
         void setTunerEnable(const std::string& allocation_id, bool enable);
         double getTunerOutputSampleRate(const std::string& allocation_id);
         void setTunerOutputSampleRate(const std::string& allocation_id, double sr);
+
+        uhd::tx_streamer::sptr usrp_tx_streamer;
+        usrpTunerStruct usrp_tuner; // data buffer/timestamps, lock
+        bool usrpCreateTxStream();
+        int _tuner_number;
+        std::string _stream_id;
+        uhd::usrp::multi_usrp::sptr usrp_device_ptr;
+        usrpRangesStruct usrp_range;    // freq/bw/sr/gain ranges supported by each tuner channel
+                                        // indices map to tuner_id
+                                        // protected by prop_lock
+
     private:
         ////////////////////////////////////////
         // Required device specific functions // -- to be implemented by device developer

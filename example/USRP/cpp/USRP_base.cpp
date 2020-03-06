@@ -121,6 +121,7 @@ void USRP_base::loadProperties()
                 "property");
 
     addProperty(ip_address,
+                "",
                 "ip_address",
                 "",
                 "readwrite",
@@ -139,6 +140,15 @@ void USRP_base::loadProperties()
     frontend_listener_allocation = frontend::frontend_listener_allocation_struct();
     frontend_tuner_allocation = frontend::frontend_tuner_allocation_struct();
     frontend_scanner_allocation = frontend::frontend_scanner_allocation_struct();
+    addProperty(device_characteristics,
+                device_characteristics_struct(),
+                "device_characteristics",
+                "device_characteristics",
+                "readonly",
+                "",
+                "external",
+                "property");
+
 }
 
 CF::Properties* USRP_base::getTunerStatus(const std::string& allocation_id)

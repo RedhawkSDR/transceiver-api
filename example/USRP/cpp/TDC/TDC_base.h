@@ -42,6 +42,8 @@ class TDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_stru
         float device_gain;
         /// Property: device_mode
         std::string device_mode;
+        /// Property: device_characteristics
+        device_characteristics_struct device_characteristics;
 
         // Ports
         /// Port: DigitalTuner_in

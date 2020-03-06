@@ -58,6 +58,8 @@ class USRP_base : public frontend::FrontendScanningTunerDevice<frontend_tuner_st
         std::string ip_address;
         /// Property: frontend_coherent_feeds
         std::vector<std::string> frontend_coherent_feeds;
+        /// Property: device_characteristics
+        device_characteristics_struct device_characteristics;
 
         // Ports
         /// Port: RFInfo_in
