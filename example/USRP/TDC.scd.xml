@@ -20,6 +20,9 @@
       <provides repid="IDL:FRONTEND/DigitalTuner:1.0" providesname="DigitalTuner_in">
         <porttype type="control"/>
       </provides>
+      <uses repid="IDL:FRONTEND/TransmitDeviceStatus:1.0" usesname="TransmitDeviceStatus_out">
+        <porttype type="control"/>
+      </uses>
       <uses repid="IDL:FRONTEND/RFInfo:1.0" usesname="RFInfoTX_out">
         <porttype type="data"/>
       </uses>

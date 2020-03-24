@@ -44,6 +44,8 @@ TDC_base::~TDC_base()
     DigitalTuner_in = 0;
     dataShortTX_in->_remove_ref();
     dataShortTX_in = 0;
+    TransmitDeviceStatus_out->_remove_ref();
+    TransmitDeviceStatus_out = 0;
     RFInfoTX_out->_remove_ref();
     RFInfoTX_out = 0;
 }
@@ -58,6 +60,9 @@ void TDC_base::construct()
     dataShortTX_in = new bulkio::InShortPort("dataShortTX_in");
     dataShortTX_in->setLogger(this->_baseLog->getChildLogger("dataShortTX_in", "ports"));
     addPort("dataShortTX_in", dataShortTX_in);
+    TransmitDeviceStatus_out = new frontend::OutTransmitDeviceStatusPort("TransmitDeviceStatus_out");
+    TransmitDeviceStatus_out->setLogger(this->_baseLog->getChildLogger("TransmitDeviceStatus_out", "ports"));
+    addPort("TransmitDeviceStatus_out", TransmitDeviceStatus_out);
     RFInfoTX_out = new frontend::OutRFInfoPort("RFInfoTX_out");
     RFInfoTX_out->setLogger(this->_baseLog->getChildLogger("RFInfoTX_out", "ports"));
     addPort("RFInfoTX_out", RFInfoTX_out);

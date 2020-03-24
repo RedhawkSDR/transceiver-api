@@ -50,6 +50,8 @@ class TDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_stru
         frontend::InDigitalTunerPort *DigitalTuner_in;
         /// Port: dataShortTX_in
         bulkio::InShortPort *dataShortTX_in;
+        /// Port: TransmitDeviceStatus_out
+        frontend::OutTransmitDeviceStatusPort *TransmitDeviceStatus_out;
         /// Port: RFInfoTX_out
         frontend::OutRFInfoPort *RFInfoTX_out;
 
