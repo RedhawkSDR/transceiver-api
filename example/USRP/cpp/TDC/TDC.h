@@ -58,7 +58,8 @@ class TDC_i : public TDC_base
         double optimizeRate(const double& req_rate);
         double optimizeBandwidth(const double& req_bw);
 
-        void verifyStatus(const std::string &stream_id, const BULKIO::PrecisionUTCTime &rightnow);
+        void verifyHWStatus(const std::string &stream_id, const BULKIO::PrecisionUTCTime &rightnow);
+        void verifyQueueStatus(const std::string &stream_id, const BULKIO::PrecisionUTCTime &rightnow, const std::vector<bulkio::StreamStatus> &error_status);
 
     private:
         ////////////////////////////////////////

@@ -451,7 +451,7 @@ int TDC_i::serviceFunction()
     return NORMAL;
 }
 
-void TDC_i::verifyStatus(const std::string &stream_id, const BULKIO::PrecisionUTCTime &rightnow) {
+void TDC_i::verifyHWStatus(const std::string &stream_id, const BULKIO::PrecisionUTCTime &rightnow) {
     if (usrp_tx_streamer.get() != NULL) {
         uhd::async_metadata_t metadata;
         bool got_msg = usrp_tx_streamer->recv_async_msg(metadata, 0.0);
@@ -480,6 +480,21 @@ void TDC_i::verifyStatus(const std::string &stream_id, const BULKIO::PrecisionUT
             }
             this->TransmitDeviceStatus_out->transmitStatusChanged(status);
         }
+    }
+}
+
+void TDC_i::verifyQueueStatus(const std::string &stream_id, const BULKIO::PrecisionUTCTime &rightnow, const std::vector<bulkio::StreamStatus> &error_status) {
+    if (error_status.size() != 0) {
+        FRONTEND::TransmitStatusType status;
+        status.stream_id = CORBA::string_dup(stream_id.c_str());
+        status.allocation_id = CORBA::string_dup(_allocationTracker.begin()->first.c_str());
+        status.timestamp = rightnow;
+        status.total_samples = 0;
+        status.total_packets = 0;
+        status.transmitting = true;
+        status.settling_time = 0;
+        status.queued_packets = 0;
+        status.status = error_status[0].code;
     }
 }
 
@@ -519,19 +534,11 @@ bool TDC_i::usrpTransmit(){
 
     std::vector<bulkio::StreamStatus> error_status;
     BULKIO::PrecisionUTCTime ts_now = bulkio::time::utils::now();
-    //block = queue.getNextBlock(ts_now, error_status, timeout, time_window);
     bulkio::ShortDataBlock block = queue.getNextBlock(ts_now, error_status);
 
-    //Sets basic data type. IE- float for float port, short for short port
-    //typedef typeof (packet->dataBuffer[0]) PACKET_ELEMENT_TYPE;
-    /*if (packet->SRI.mode != 1) {
-        LOG_ERROR(USRP_UHD_i,"USRP device requires complex data.  Real data type received.");
-        delete packet;
-        return false;
-    }*/
-
     std::string stream_id(block.sri().streamID);
-    verifyStatus(stream_id, ts_now);
+    verifyQueueStatus(stream_id, ts_now, error_status);
+    verifyHWStatus(stream_id, ts_now);
 
     if (block) {
         if (block.size() != 0) {
@@ -549,7 +556,7 @@ bool TDC_i::usrpTransmit(){
                 return false;
             }
         }
-        verifyStatus(stream_id, ts_now);
+        verifyHWStatus(stream_id, ts_now);
     }
     return true;
 }
