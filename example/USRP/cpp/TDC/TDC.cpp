@@ -495,6 +495,7 @@ void TDC_i::verifyQueueStatus(const std::string &stream_id, const BULKIO::Precis
         status.settling_time = 0;
         status.queued_packets = 0;
         status.status = error_status[0].code;
+        this->TransmitDeviceStatus_out->transmitStatusChanged(status);
     }
 }
 
@@ -536,11 +537,10 @@ bool TDC_i::usrpTransmit(){
     BULKIO::PrecisionUTCTime ts_now = bulkio::time::utils::now();
     bulkio::ShortDataBlock block = queue.getNextBlock(ts_now, error_status);
 
-    std::string stream_id(block.sri().streamID);
-    verifyQueueStatus(stream_id, ts_now, error_status);
-    verifyHWStatus(stream_id, ts_now);
-
     if (block) {
+        std::string stream_id(block.sri().streamID);
+        verifyQueueStatus(stream_id, ts_now, error_status);
+        verifyHWStatus(stream_id, ts_now);
         if (block.size() != 0) {
             uhd::tx_metadata_t _metadata;
             _metadata.start_of_burst = false;

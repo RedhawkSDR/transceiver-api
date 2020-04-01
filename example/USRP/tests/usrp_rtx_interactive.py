@@ -1,9 +1,18 @@
 from ossie.utils import sb
 import frontend
-from ossie.cf import CF
+from ossie.cf import CF, CF__POA
 from omniORB import any
-from redhawk.frontendInterfaces import FRONTEND
+from redhawk.frontendInterfaces import FRONTEND, FRONTEND__POA
 from frontend import tuner_device, fe_types
+
+class StatusConsumer(FRONTEND__POA.TransmitDeviceStatus):
+    def __init__(self):
+        pass
+    def transmitStatusChanged(self, status):
+        print status
+    def statusChanged(self, status):
+        print status
+
 usrp=sb.launch('USRP')
 _allocation_id = 'hello'
 frontend_allocation_gf = tuner_device.createTunerAllocation(tuner_type="TDC",center_frequency=600e6, allocation_id=_allocation_id, returnDict=False)
@@ -32,6 +41,10 @@ dev=usrp.devices[0]
 
 snk=sb.StreamSink()
 alloc_response_2[0].data_port.connectPort(snk.getPort('shortIn'), 'connection_id')
+
+status_snk = StatusConsumer()
+status_port = alloc_response_1[0].device_ref.getPort('TransmitDeviceStatus_out')
+status_port.connectPort(status_snk._this(), 'connection id')
 
 send_length = 32000
 magnitude = 300
