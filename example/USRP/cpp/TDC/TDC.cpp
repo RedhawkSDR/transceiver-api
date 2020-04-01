@@ -451,6 +451,38 @@ int TDC_i::serviceFunction()
     return NORMAL;
 }
 
+void TDC_i::verifyStatus(const std::string &stream_id, const BULKIO::PrecisionUTCTime &rightnow) {
+    if (usrp_tx_streamer.get() != NULL) {
+        uhd::async_metadata_t metadata;
+        bool got_msg = usrp_tx_streamer->recv_async_msg(metadata, 0.0);
+        if (got_msg) {
+            FRONTEND::TransmitStatusType status;
+            status.stream_id = CORBA::string_dup(stream_id.c_str());
+            status.allocation_id = CORBA::string_dup(_allocationTracker.begin()->first.c_str());
+            status.timestamp = rightnow;
+            status.total_samples = 0;
+            status.total_packets = 0;
+            status.transmitting = true;
+            status.settling_time = 0;
+            status.queued_packets = 0;
+            if ((metadata.event_code == uhd::async_metadata_t::EVENT_CODE_UNDERFLOW) || 
+                (metadata.event_code == uhd::async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET)) {
+                status.status = CF::DEV_UNDERFLOW;
+            } else if (metadata.event_code == uhd::async_metadata_t::EVENT_CODE_TIME_ERROR) {
+                status.status = CF::DEV_MISSED_TRANSMIT_WINDOW;
+            } else if ((metadata.event_code == uhd::async_metadata_t::EVENT_CODE_USER_PAYLOAD) ||
+                (metadata.event_code == uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR) ||
+                (metadata.event_code == uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST) ||
+                (metadata.event_code == uhd::async_metadata_t::EVENT_CODE_BURST_ACK)) {
+                status.status = CF::DEV_HARDWARE_FAILURE;
+            } else {
+                status.status = CF::DEV_HARDWARE_FAILURE;
+            }
+            this->TransmitDeviceStatus_out->transmitStatusChanged(status);
+        }
+    }
+}
+
 bool TDC_i::usrpTransmit(){
     RH_TRACE(this->_baseLog,__PRETTY_FUNCTION__);
 
@@ -498,6 +530,9 @@ bool TDC_i::usrpTransmit(){
         return false;
     }*/
 
+    std::string stream_id(block.sri().streamID);
+    verifyStatus(stream_id, ts_now);
+
     if (block) {
         if (block.size() != 0) {
             uhd::tx_metadata_t _metadata;
@@ -514,6 +549,7 @@ bool TDC_i::usrpTransmit(){
                 return false;
             }
         }
+        verifyStatus(stream_id, ts_now);
     }
     return true;
 }
