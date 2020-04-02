@@ -13,7 +13,7 @@
 
 #define BOOL_VALUE_HERE 0
 
-class TDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_struct_struct>, public virtual frontend::digital_tuner_delegation, protected ThreadedComponent, public virtual DynamicComponent
+class TDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_struct_struct>, public virtual frontend::transmit_control_delegation, protected ThreadedComponent, public virtual DynamicComponent
 {
     public:
         TDC_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl);
@@ -46,8 +46,8 @@ class TDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_stru
         device_characteristics_struct device_characteristics;
 
         // Ports
-        /// Port: DigitalTuner_in
-        frontend::InDigitalTunerPort *DigitalTuner_in;
+        /// Port: TransmitControl_in
+        frontend::InTransmitControlPort *TransmitControl_in;
         /// Port: dataShortTX_in
         bulkio::InShortPort *dataShortTX_in;
         /// Port: TransmitDeviceStatus_out

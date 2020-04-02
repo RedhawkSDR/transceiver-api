@@ -17,7 +17,7 @@
     <supportsinterface repid="IDL:CF/LogEventConsumer:1.0" supportsname="LogEventConsumer"/>
     <supportsinterface repid="IDL:CF/LogConfiguration:1.0" supportsname="LogConfiguration"/>
     <ports>
-      <provides repid="IDL:FRONTEND/DigitalTuner:1.0" providesname="DigitalTuner_in">
+      <provides repid="IDL:FRONTEND/TransmitControl:1.0" providesname="TransmitControl_in">
         <porttype type="control"/>
       </provides>
       <uses repid="IDL:FRONTEND/TransmitDeviceStatus:1.0" usesname="TransmitDeviceStatus_out">
@@ -62,7 +62,8 @@
     <interface name="AnalogTuner" repid="IDL:FRONTEND/AnalogTuner:1.0">
       <inheritsinterface repid="IDL:FRONTEND/FrontendTuner:1.0"/>
     </interface>
-    <interface name="DigitalTuner" repid="IDL:FRONTEND/DigitalTuner:1.0">
+    <interface name="TransmitControl" repid="IDL:FRONTEND/TransmitControl:1.0">
+      <inheritsinterface repid="IDL:FRONTEND/DigitalTuner:1.0"/>
       <inheritsinterface repid="IDL:FRONTEND/AnalogTuner:1.0"/>
     </interface>
     <interface name="RFInfo" repid="IDL:FRONTEND/RFInfo:1.0"/>

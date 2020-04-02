@@ -40,8 +40,8 @@ TDC_base::TDC_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::P
 
 TDC_base::~TDC_base()
 {
-    DigitalTuner_in->_remove_ref();
-    DigitalTuner_in = 0;
+    TransmitControl_in->_remove_ref();
+    TransmitControl_in = 0;
     dataShortTX_in->_remove_ref();
     dataShortTX_in = 0;
     TransmitDeviceStatus_out->_remove_ref();
@@ -54,9 +54,9 @@ void TDC_base::construct()
 {
     loadProperties();
 
-    DigitalTuner_in = new frontend::InDigitalTunerPort("DigitalTuner_in", this);
-    DigitalTuner_in->setLogger(this->_baseLog->getChildLogger("DigitalTuner_in", "ports"));
-    addPort("DigitalTuner_in", DigitalTuner_in);
+    TransmitControl_in = new frontend::InTransmitControlPort("TransmitControl_in", this);
+    TransmitControl_in->setLogger(this->_baseLog->getChildLogger("TransmitControl_in", "ports"));
+    addPort("TransmitControl_in", TransmitControl_in);
     dataShortTX_in = new bulkio::InShortPort("dataShortTX_in");
     dataShortTX_in->setLogger(this->_baseLog->getChildLogger("dataShortTX_in", "ports"));
     addPort("dataShortTX_in", dataShortTX_in);

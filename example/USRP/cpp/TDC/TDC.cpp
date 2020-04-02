@@ -56,8 +56,9 @@ void TDC_i::constructor()
     ***********************************************************************************/
     this->addChannels(1, "TDC");
     this->setDataPort(dataShortTX_in->_this());
-    this->setControlPort(DigitalTuner_in->_this());
+    this->setControlPort(TransmitControl_in->_this());
     _tuner_number = -1;
+    _error_state = false;
     if (usrp_tuner.lock.cond == NULL)
         usrp_tuner.lock.cond = new boost::condition_variable;
     if (usrp_tuner.lock.mutex == NULL)
@@ -455,7 +456,7 @@ void TDC_i::verifyHWStatus(const std::string &stream_id, const BULKIO::Precision
     if (usrp_tx_streamer.get() != NULL) {
         uhd::async_metadata_t metadata;
         bool got_msg = usrp_tx_streamer->recv_async_msg(metadata, 0.0);
-        if (got_msg) {
+        if (got_msg and (not _error_state)) {
             FRONTEND::TransmitStatusType status;
             status.stream_id = CORBA::string_dup(stream_id.c_str());
             status.allocation_id = CORBA::string_dup(_allocationTracker.begin()->first.c_str());
@@ -478,13 +479,14 @@ void TDC_i::verifyHWStatus(const std::string &stream_id, const BULKIO::Precision
             } else {
                 status.status = CF::DEV_HARDWARE_FAILURE;
             }
+            _error_state = true;
             this->TransmitDeviceStatus_out->transmitStatusChanged(status);
         }
     }
 }
 
 void TDC_i::verifyQueueStatus(const std::string &stream_id, const BULKIO::PrecisionUTCTime &rightnow, const std::vector<bulkio::StreamStatus> &error_status) {
-    if (error_status.size() != 0) {
+    if ((error_status.size() != 0) and (not _error_state)) {
         FRONTEND::TransmitStatusType status;
         status.stream_id = CORBA::string_dup(stream_id.c_str());
         status.allocation_id = CORBA::string_dup(_allocationTracker.begin()->first.c_str());
@@ -495,6 +497,7 @@ void TDC_i::verifyQueueStatus(const std::string &stream_id, const BULKIO::Precis
         status.settling_time = 0;
         status.queued_packets = 0;
         status.status = error_status[0].code;
+        _error_state = true;
         this->TransmitDeviceStatus_out->transmitStatusChanged(status);
     }
 }
@@ -848,5 +851,53 @@ double TDC_i::getTunerOutputSampleRate(const std::string& allocation_id){
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
     return frontend_tuner_status[idx].sample_rate;
+}
+
+void TDC_i::reset(const std::string& allocation_id, const std::string& stream_id) {
+    long idx = getTunerMapping(allocation_id);
+    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
+    if(allocation_id != getControlAllocationId(idx))
+        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
+}
+
+bool TDC_i::hold(const std::string& allocation_id, const std::string& stream_id) {
+    long idx = getTunerMapping(allocation_id);
+    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
+    if(allocation_id != getControlAllocationId(idx))
+        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
+    return true;
+}
+
+std::vector<std::string> TDC_i::held(const std::string& allocation_id, const std::string& stream_id) {
+    long idx = getTunerMapping(allocation_id);
+    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
+    if(allocation_id != getControlAllocationId(idx))
+        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
+    std::vector<std::string> _held;
+    return _held;
+}
+
+bool TDC_i::allow(const std::string& allocation_id, const std::string& stream_id) {
+    long idx = getTunerMapping(allocation_id);
+    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
+    if(allocation_id != getControlAllocationId(idx))
+        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
+    return true;
+}
+
+void TDC_i::setTransmitParemeters(const std::string& allocation_id, const frontend::TransmitParameters& transmit_parameters) {
+    long idx = getTunerMapping(allocation_id);
+    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
+    if(allocation_id != getControlAllocationId(idx))
+        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
+}
+
+frontend::TransmitParameters TDC_i::getTransmitParemeters(const std::string& allocation_id) {
+    long idx = getTunerMapping(allocation_id);
+    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
+    if(allocation_id != getControlAllocationId(idx))
+        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
+    frontend::TransmitParameters transmit_parameters;
+    return transmit_parameters;
 }
 

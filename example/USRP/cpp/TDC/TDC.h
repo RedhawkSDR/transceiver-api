@@ -42,6 +42,12 @@ class TDC_i : public TDC_base
         void setTunerEnable(const std::string& allocation_id, bool enable);
         double getTunerOutputSampleRate(const std::string& allocation_id);
         void setTunerOutputSampleRate(const std::string& allocation_id, double sr);
+        void reset(const std::string& allocation_id, const std::string& stream_id);
+        bool hold(const std::string& allocation_id, const std::string& stream_id);
+        std::vector<std::string> held(const std::string& allocation_id, const std::string& stream_id);
+        bool allow(const std::string& allocation_id, const std::string& stream_id);
+        void setTransmitParemeters(const std::string& allocation_id, const frontend::TransmitParameters& transmit_parameters);
+        frontend::TransmitParameters getTransmitParemeters(const std::string& allocation_id);
 
         uhd::tx_streamer::sptr usrp_tx_streamer;
         usrpTunerStruct usrp_tuner; // data buffer/timestamps, lock
@@ -60,6 +66,7 @@ class TDC_i : public TDC_base
 
         void verifyHWStatus(const std::string &stream_id, const BULKIO::PrecisionUTCTime &rightnow);
         void verifyQueueStatus(const std::string &stream_id, const BULKIO::PrecisionUTCTime &rightnow, const std::vector<bulkio::StreamStatus> &error_status);
+        bool _error_state;
 
     private:
         ////////////////////////////////////////
