@@ -6,7 +6,7 @@ bindir = $(prefix)/dev/devices/USRP/cpp
 bin_PROGRAMS = USRP
 
 xmldir = $(prefix)/dev/devices/USRP
-dist_xml_DATA = ../USRP.scd.xml ../USRP.prf.xml ../USRP.spd.xml
+dist_xml_DATA = ../TDC.prf.xml ../USRP.scd.xml ../TDC.scd.xml ../USRP.prf.xml ../RDC.scd.xml ../USRP.spd.xml ../RDC.prf.xml
 
 distclean-local:
 	rm -rf m4
@@ -28,7 +28,7 @@ distclean-local:
 # you wish to manually control these options.
 include $(srcdir)/Makefile.am.ide
 USRP_SOURCES = $(redhawk_SOURCES_auto)
-USRP_LDADD = $(SOFTPKG_LIBS) $(PROJECTDEPS_LIBS) $(BOOST_LDFLAGS) $(BOOST_THREAD_LIB) $(BOOST_REGEX_LIB) $(BOOST_SYSTEM_LIB) $(INTERFACEDEPS_LIBS) $(redhawk_LDADD_auto) $(LIBUHD_LIBS) $(LIBUUID_LIBS)
-USRP_CXXFLAGS = -Wall $(SOFTPKG_CFLAGS) $(PROJECTDEPS_CFLAGS) $(BOOST_CPPFLAGS) $(INTERFACEDEPS_CFLAGS) $(redhawk_INCLUDES_auto) $(LIBUHD_FLAGS) $(LIBUUID_FLAGS) -std=c++11 -Wno-deprecated
+USRP_LDADD = $(SOFTPKG_LIBS) $(PROJECTDEPS_LIBS) $(BOOST_LDFLAGS) $(BOOST_THREAD_LIB) $(BOOST_REGEX_LIB) $(BOOST_SYSTEM_LIB) $(INTERFACEDEPS_LIBS) $(redhawk_LDADD_auto)
+USRP_CXXFLAGS = -Wall $(SOFTPKG_CFLAGS) $(PROJECTDEPS_CFLAGS) $(BOOST_CPPFLAGS) $(INTERFACEDEPS_CFLAGS) $(redhawk_INCLUDES_auto)
 USRP_LDFLAGS = -Wall $(redhawk_LDFLAGS_auto)
 
