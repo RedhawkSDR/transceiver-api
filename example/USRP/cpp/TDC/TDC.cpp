@@ -864,6 +864,18 @@ void TDC_i::reset(const std::string& allocation_id, const std::string& stream_id
     bulkio::StreamQueue<bulkio::InShortPort>& queue = dataShortTX_in->getQueue();
     _error_state = false;
     queue.reset(stream_id);
+    FRONTEND::TransmitStatusType status;
+    status.stream_id = CORBA::string_dup(stream_id.c_str());
+    status.allocation_id = CORBA::string_dup(_allocationTracker.begin()->first.c_str());
+    status.timestamp = bulkio::time::utils::now();
+    status.total_samples = 0;
+    status.total_packets = 0;
+    status.transmitting = true;
+    status.settling_time = 0;
+    status.queued_packets = 0;
+    status.status = CF::DEV_OK;
+    _error_state = true;
+    this->TransmitDeviceStatus_out->transmitStatusChanged(status);
 }
 
 bool TDC_i::hold(const std::string& allocation_id, const std::string& stream_id) {
