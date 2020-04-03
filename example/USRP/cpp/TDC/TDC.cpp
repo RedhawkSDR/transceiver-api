@@ -542,11 +542,13 @@ bool TDC_i::usrpTransmit(){
     std::vector<bulkio::StreamStatus> error_status;
     BULKIO::PrecisionUTCTime ts_now = bulkio::time::utils::now();
     bulkio::ShortDataBlock block = queue.getNextBlock(ts_now, error_status);
+    std::string empty_string;
+
+    verifyHWStatus(empty_string, ts_now);
 
     if (block) {
         std::string stream_id(block.sri().streamID);
         verifyQueueStatus(stream_id, ts_now, error_status);
-        verifyHWStatus(stream_id, ts_now);
         if (block.size() != 0) {
             uhd::tx_metadata_t _metadata;
             _metadata.start_of_burst = false;
