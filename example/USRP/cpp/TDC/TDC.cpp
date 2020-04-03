@@ -833,7 +833,6 @@ void TDC_i::reset(const std::string& allocation_id, const std::string& stream_id
     status.settling_time = 0;
     status.queued_packets = 0;
     status.status = CF::DEV_OK;
-    _error_state = true;
     this->TransmitDeviceStatus_out->transmitStatusChanged(status);
 }
 
