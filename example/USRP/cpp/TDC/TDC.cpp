@@ -858,6 +858,7 @@ void TDC_i::reset(const std::string& allocation_id, const std::string& stream_id
     if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
     if(allocation_id != getControlAllocationId(idx))
         throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
+    _error_state = false;
 }
 
 bool TDC_i::hold(const std::string& allocation_id, const std::string& stream_id) {
@@ -890,6 +891,9 @@ void TDC_i::setTransmitParemeters(const std::string& allocation_id, const fronte
     if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
     if(allocation_id != getControlAllocationId(idx))
         throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
+    bulkio::StreamQueue<bulkio::InShortPort>& queue = dataShortTX_in->getQueue();
+    queue.update_ignore_error(transmit_parameters.ignore_error);
+    queue.update_ignore_timestamp(transmit_parameters.ignore_timestamp);
 }
 
 frontend::TransmitParameters TDC_i::getTransmitParemeters(const std::string& allocation_id) {
@@ -898,6 +902,9 @@ frontend::TransmitParameters TDC_i::getTransmitParemeters(const std::string& all
     if(allocation_id != getControlAllocationId(idx))
         throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     frontend::TransmitParameters transmit_parameters;
+    bulkio::StreamQueue<bulkio::InShortPort>& queue = dataShortTX_in->getQueue();
+    transmit_parameters.ignore_error = queue.get_ignore_error();
+    transmit_parameters.ignore_timestamp = queue.get_ignore_timestamp();
     return transmit_parameters;
 }
 
