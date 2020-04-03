@@ -18,12 +18,12 @@ _allocation_id = 'hello'
 frontend_allocation_gf = tuner_device.createTunerAllocation(tuner_type="TDC",center_frequency=600e6, allocation_id=_allocation_id, returnDict=False)
 alloc_response_1 = usrp.allocate([frontend_allocation_gf])
 print alloc_response_1[0].data_port
-dev=usrp.devices[0]
-#center_freq = alloc_response_1[0].control_port.getTunerCenterFrequency(_allocation_id)
-#alloc_response_1[0].control_port.setTunerCenterFrequency('hello', center_freq+100)
-#usrp.ports[2].ref.getTunerCenterFrequency(_allocation_id)
-#usrp.frontend_tuner_status[1]
+for _dev in usrp.devices:
+    if 'TDC' in _dev.label:
+        tdc=_dev
+        break
 
+tx_ctrl=tdc.getPort('TransmitControl_in')
 src=sb.StreamSource()
 src.blocking = True
 src.complex = True
@@ -31,17 +31,12 @@ src.getPort('shortOut').connectPort(alloc_response_1[0].data_port, 'connection_i
 
 frontend_allocation_rx = tuner_device.createTunerAllocation(tuner_type="RDC",center_frequency=600e6, allocation_id=_allocation_id, returnDict=False)
 alloc_response_2 = usrp.allocate([frontend_allocation_rx])
-dev=usrp.devices[0]
-#center_freq = alloc_response_2[0].control_port.getTunerCenterFrequency(_allocation_id)
-#alloc_response_2[0].control_port.setTunerCenterFrequency('hello', center_freq+100)
-#usrp.ports[2].ref.getTunerCenterFrequency(_allocation_id)
-#alloc_response_1[0].control_port.setTunerCenterFrequency('hello', center_freq+100)
-#usrp.ports[2].ref.getTunerCenterFrequency(_allocation_id)
-#usrp.frontend_tuner_status[0]
+for _dev in usrp.devices:
+    if 'RDC' in _dev.label:
+        dev=_dev
 
 snk=sb.StreamSink()
 alloc_response_2[0].data_port.connectPort(snk.getPort('shortIn'), 'connection_id')
-
 status_snk = StatusConsumer()
 status_port = alloc_response_1[0].device_ref.getPort('TransmitDeviceStatus_out')
 status_port.connectPort(status_snk._this(), 'connection id')
