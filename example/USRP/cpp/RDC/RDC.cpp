@@ -958,61 +958,39 @@ double RDC_i::optimizeBandwidth(const double& req_bw){
 Functions servicing the tuner control port
 *************************************************************/
 std::string RDC_i::getTunerType(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].tuner_type;
+    return frontend_tuner_status[0].tuner_type;
 }
 
 bool RDC_i::getTunerDeviceControl(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if (getControlAllocationId(idx) == allocation_id)
-        return true;
-    return false;
+    return true;
 }
 
 std::string RDC_i::getTunerGroupId(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].group_id;
+    return frontend_tuner_status[0].group_id;
 }
 
 std::string RDC_i::getTunerRfFlowId(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].rf_flow_id;
+    return frontend_tuner_status[0].rf_flow_id;
 }
 
 void RDC_i::setTunerCenterFrequency(const std::string& allocation_id, double freq) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     if (freq<0) throw FRONTEND::BadParameterException("Center frequency cannot be less than 0");
     // set hardware to new value. Raise an exception if it's not possible
-    this->frontend_tuner_status[idx].center_frequency = freq;
+    this->frontend_tuner_status[0].center_frequency = freq;
 }
 
 double RDC_i::getTunerCenterFrequency(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].center_frequency;
+    return frontend_tuner_status[0].center_frequency;
 }
 
 void RDC_i::setTunerBandwidth(const std::string& allocation_id, double bw) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     if (bw<0) throw FRONTEND::BadParameterException("Bandwidth cannot be less than 0");
     // set hardware to new value. Raise an exception if it's not possible
-    this->frontend_tuner_status[idx].bandwidth = bw;
+    this->frontend_tuner_status[0].bandwidth = bw;
 }
 
 double RDC_i::getTunerBandwidth(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].bandwidth;
+    return frontend_tuner_status[0].bandwidth;
 }
 
 void RDC_i::setTunerAgcEnable(const std::string& allocation_id, bool enable)
@@ -1046,34 +1024,22 @@ long RDC_i::getTunerReferenceSource(const std::string& allocation_id)
 }
 
 void RDC_i::setTunerEnable(const std::string& allocation_id, bool enable) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     // set hardware to new value. Raise an exception if it's not possible
-    this->frontend_tuner_status[idx].enabled = enable;
+    this->frontend_tuner_status[0].enabled = enable;
 }
 
 bool RDC_i::getTunerEnable(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].enabled;
+    return frontend_tuner_status[0].enabled;
 }
 
 void RDC_i::setTunerOutputSampleRate(const std::string& allocation_id, double sr) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     if (sr<0) throw FRONTEND::BadParameterException("Sample rate cannot be less than 0");
     // set hardware to new value. Raise an exception if it's not possible
-    this->frontend_tuner_status[idx].sample_rate = sr;
+    this->frontend_tuner_status[0].sample_rate = sr;
 }
 
 double RDC_i::getTunerOutputSampleRate(const std::string& allocation_id){
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].sample_rate;
+    return frontend_tuner_status[0].sample_rate;
 }
 
 /*************************************************************
