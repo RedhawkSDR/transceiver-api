@@ -173,11 +173,6 @@ bool TDC_i::usrpCreateTxStream(){
 
     std::string cpu_format = "sc16";
     usrp_tx_streamer_typesize = sizeof(short);
-    /*if (sizeof (PACKET_ELEMENT_TYPE) == 4){
-        cpu_format = "fc32"; // enable sending dataFloat with "fc32"
-        usrp_tx_streamer_typesize[frontend_tuner_status[tuner_id].tuner_number] = sizeof(PACKET_ELEMENT_TYPE);
-    }
-    RH_DEBUG(this->_baseLog,"usrpCreateTxStream|using cpu_format" << cpu_format);*/
 
     /*!
      * The OTW format is a string that describes the format over-the-wire.
@@ -740,61 +735,39 @@ double TDC_i::optimizeBandwidth(const double& req_bw){
 Functions servicing the tuner control port
 *************************************************************/
 std::string TDC_i::getTunerType(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].tuner_type;
+    return frontend_tuner_status[0].tuner_type;
 }
 
 bool TDC_i::getTunerDeviceControl(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if (getControlAllocationId(idx) == allocation_id)
-        return true;
-    return false;
+    return true;
 }
 
 std::string TDC_i::getTunerGroupId(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].group_id;
+    return frontend_tuner_status[0].group_id;
 }
 
 std::string TDC_i::getTunerRfFlowId(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].rf_flow_id;
+    return frontend_tuner_status[0].rf_flow_id;
 }
 
 void TDC_i::setTunerCenterFrequency(const std::string& allocation_id, double freq) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     if (freq<0) throw FRONTEND::BadParameterException("Center frequency cannot be less than 0");
     // set hardware to new value. Raise an exception if it's not possible
-    this->frontend_tuner_status[idx].center_frequency = freq;
+    this->frontend_tuner_status[0].center_frequency = freq;
 }
 
 double TDC_i::getTunerCenterFrequency(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].center_frequency;
+    return frontend_tuner_status[0].center_frequency;
 }
 
 void TDC_i::setTunerBandwidth(const std::string& allocation_id, double bw) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     if (bw<0) throw FRONTEND::BadParameterException("Bandwidth cannot be less than 0");
     // set hardware to new value. Raise an exception if it's not possible
-    this->frontend_tuner_status[idx].bandwidth = bw;
+    this->frontend_tuner_status[0].bandwidth = bw;
 }
 
 double TDC_i::getTunerBandwidth(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].bandwidth;
+    return frontend_tuner_status[0].bandwidth;
 }
 
 void TDC_i::setTunerAgcEnable(const std::string& allocation_id, bool enable)
@@ -828,41 +801,25 @@ long TDC_i::getTunerReferenceSource(const std::string& allocation_id)
 }
 
 void TDC_i::setTunerEnable(const std::string& allocation_id, bool enable) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     // set hardware to new value. Raise an exception if it's not possible
-    this->frontend_tuner_status[idx].enabled = enable;
+    this->frontend_tuner_status[0].enabled = enable;
 }
 
 bool TDC_i::getTunerEnable(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].enabled;
+    return frontend_tuner_status[0].enabled;
 }
 
 void TDC_i::setTunerOutputSampleRate(const std::string& allocation_id, double sr) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     if (sr<0) throw FRONTEND::BadParameterException("Sample rate cannot be less than 0");
     // set hardware to new value. Raise an exception if it's not possible
-    this->frontend_tuner_status[idx].sample_rate = sr;
+    this->frontend_tuner_status[0].sample_rate = sr;
 }
 
 double TDC_i::getTunerOutputSampleRate(const std::string& allocation_id){
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    return frontend_tuner_status[idx].sample_rate;
+    return frontend_tuner_status[0].sample_rate;
 }
 
 void TDC_i::reset(const std::string& allocation_id, const std::string& stream_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     bulkio::StreamQueue<bulkio::InShortPort>& queue = dataShortTX_in->getQueue();
     _error_state = false;
     queue.reset(stream_id);
@@ -881,47 +838,27 @@ void TDC_i::reset(const std::string& allocation_id, const std::string& stream_id
 }
 
 bool TDC_i::hold(const std::string& allocation_id, const std::string& stream_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     bulkio::StreamQueue<bulkio::InShortPort>& queue = dataShortTX_in->getQueue();
     return queue.hold(stream_id);
 }
 
 std::vector<std::string> TDC_i::held(const std::string& allocation_id, const std::string& stream_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     bulkio::StreamQueue<bulkio::InShortPort>& queue = dataShortTX_in->getQueue();
     return queue.held();
 }
 
 bool TDC_i::allow(const std::string& allocation_id, const std::string& stream_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     bulkio::StreamQueue<bulkio::InShortPort>& queue = dataShortTX_in->getQueue();
     return queue.allow(stream_id);
 }
 
 void TDC_i::setTransmitParemeters(const std::string& allocation_id, const frontend::TransmitParameters& transmit_parameters) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     bulkio::StreamQueue<bulkio::InShortPort>& queue = dataShortTX_in->getQueue();
     queue.update_ignore_error(transmit_parameters.ignore_error);
     queue.update_ignore_timestamp(transmit_parameters.ignore_timestamp);
 }
 
 frontend::TransmitParameters TDC_i::getTransmitParemeters(const std::string& allocation_id) {
-    long idx = getTunerMapping(allocation_id);
-    if (idx < 0) throw FRONTEND::FrontendException("Invalid allocation id");
-    if(allocation_id != getControlAllocationId(idx))
-        throw FRONTEND::FrontendException(("ID "+allocation_id+" does not have authorization to modify the tuner").c_str());
     frontend::TransmitParameters transmit_parameters;
     bulkio::StreamQueue<bulkio::InShortPort>& queue = dataShortTX_in->getQueue();
     transmit_parameters.ignore_error = queue.get_ignore_error();
