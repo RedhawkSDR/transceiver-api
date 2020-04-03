@@ -57,6 +57,11 @@ void TDC_i::constructor()
     this->addChannels(1, "TDC");
     this->setDataPort(dataShortTX_in->_this());
     this->setControlPort(TransmitControl_in->_this());
+
+    bulkio::StreamQueue<bulkio::InShortPort>& queue = dataShortTX_in->getQueue();
+    queue.update_ignore_error(true);
+    queue.update_ignore_timestamp(true);
+
     _tuner_number = -1;
     _error_state = false;
     if (usrp_tuner.lock.cond == NULL)
@@ -506,8 +511,6 @@ bool TDC_i::usrpTransmit(){
     RH_TRACE(this->_baseLog,__PRETTY_FUNCTION__);
 
     bulkio::StreamQueue<bulkio::InShortPort>& queue = dataShortTX_in->getQueue();
-    queue.update_ignore_error(true);
-    queue.update_ignore_timestamp(true);
 
     if(usrp_tuner.update_sri){
 
@@ -623,7 +626,7 @@ bool TDC_i::deviceSetTuning(const frontend::frontend_tuner_allocation_struct &re
             throw FRONTEND::BadParameterException("INVALID REQUEST -- device capabilities cannot support bw request");
         }
 
-        // check vs. device sample rate capability (ensure 0 <= request <= max device capability)
+        // check vs. device sample ratehold capability (ensure 0 <= request <= max device capability)
         if ( !frontend::validateRequest(0,device_characteristics.rate_max,request.sample_rate) ){
             throw FRONTEND::BadParameterException("INVALID REQUEST -- device capabilities cannot support sr request");
         }
