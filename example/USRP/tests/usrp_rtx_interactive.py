@@ -5,11 +5,17 @@ from omniORB import any
 from redhawk.frontendInterfaces import FRONTEND, FRONTEND__POA
 from frontend import tuner_device, fe_types
 
-class StatusConsumer(FRONTEND__POA.TransmitDeviceStatus):
+class TransmitStatusConsumer(FRONTEND__POA.TransmitDeviceStatus):
     def __init__(self):
         pass
     def transmitStatusChanged(self, status):
         print status
+    def statusChanged(self, status):
+        print status
+
+class DeviceStatusConsumer(CF__POA.DeviceStatus):
+    def __init__(self):
+        pass
     def statusChanged(self, status):
         print status
 
@@ -37,9 +43,14 @@ for _dev in usrp.devices:
 
 snk=sb.StreamSink()
 alloc_response_2[0].data_port.connectPort(snk.getPort('shortIn'), 'connection_id')
-status_snk = StatusConsumer()
+
+status_snk = TransmitStatusConsumer()
 status_port = alloc_response_1[0].device_ref.getPort('TransmitDeviceStatus_out')
 status_port.connectPort(status_snk._this(), 'connection id')
+
+status_rdc = DeviceStatusConsumer()
+status_port = alloc_response_2[0].device_ref.getPort('DeviceStatus_out')
+status_port.connectPort(status_rdc._this(), 'connection id')
 
 send_length = 32000
 magnitude = 300
