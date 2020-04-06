@@ -449,15 +449,36 @@ long RDC_i::usrpReceive(double timeout){
     usrp_tuner.buffer_size += (num_samps*2);
 
     //handle possible errors conditions
+    CF::DeviceStatusType status;
+    status.allocation_id = CORBA::string_dup(_allocationTracker.begin()->first.c_str());
+    status.timestamp = redhawk::time::utils::now();
+    std::ostringstream error_msg;
     switch (_metadata.error_code) {
         case uhd::rx_metadata_t::ERROR_CODE_NONE:
             break;
         case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
-            RH_WARN(this->_baseLog, "WARNING: TIMEOUT OCCURED ON USRP RECEIVE! (received num_samps=" << num_samps << ")");
+            error_msg << "WARNING: TIMEOUT OCCURED ON USRP RECEIVE! (received num_samps=" << num_samps << ")";
+            RH_WARN(this->_baseLog, error_msg.str());
+            status.allocation_id = CORBA::string_dup(error_msg.str().c_str());
+            status.status = CF::DEV_UNDERFLOW;
+            this->DeviceStatus_out->statusChanged(status);
             return 0;
         case uhd::rx_metadata_t::ERROR_CODE_OVERFLOW:
+            status.status = CF::DEV_OVERFLOW;
+            this->DeviceStatus_out->statusChanged(status);
             RH_WARN(this->_baseLog, "WARNING: USRP OVERFLOW DETECTED!");
             // may have received data, but 0 is returned by usrp recv function so we don't know how many samples, must throw away
+            return -1; // this will just cause us to return NORMAL so there's no wait before next iteration
+        case uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND:
+            status.allocation_id = CORBA::string_dup("Device received a late command");
+        case uhd::rx_metadata_t::ERROR_CODE_BROKEN_CHAIN:
+            status.allocation_id = CORBA::string_dup("Device expected another stream command");
+        case uhd::rx_metadata_t::ERROR_CODE_ALIGNMENT:
+            status.allocation_id = CORBA::string_dup("Device multi-channel alignment failed");
+        case uhd::rx_metadata_t::ERROR_CODE_BAD_PACKET:
+            status.allocation_id = CORBA::string_dup("Device could not parse a received packet");
+            status.status = CF::DEV_HARDWARE_FAILURE;
+            this->DeviceStatus_out->statusChanged(status);
             return -1; // this will just cause us to return NORMAL so there's no wait before next iteration
         default:
             RH_WARN(this->_baseLog, "WARNING: UHD source block got error code 0x" << _metadata.error_code);
