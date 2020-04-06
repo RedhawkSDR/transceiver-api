@@ -7,6 +7,7 @@
 #include <ossie/DynamicComponent.h>
 
 #include <frontend/frontend.h>
+#include "RDC_port_impl.h"
 #include <bulkio/bulkio.h>
 #include "RDC_struct_props.h"
 #include "../struct_props.h"
@@ -15,6 +16,8 @@
 
 class RDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_struct_struct>, public virtual frontend::digital_tuner_delegation, public virtual frontend::rfinfo_delegation, protected ThreadedComponent, public virtual DynamicComponent
 {
+    friend class CF_DeviceStatus_Out_i;
+
     public:
         RDC_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl);
         RDC_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, char *compDev);
@@ -56,6 +59,8 @@ class RDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_stru
         frontend::InRFInfoPort *RFInfo_in;
         /// Port: DigitalTuner_in
         frontend::InDigitalTunerPort *DigitalTuner_in;
+        /// Port: DeviceStatus_out
+        CF_DeviceStatus_Out_i *DeviceStatus_out;
         /// Port: dataShort_out
         bulkio::OutShortPort *dataShort_out;
         /// Port: dataSDDS_out

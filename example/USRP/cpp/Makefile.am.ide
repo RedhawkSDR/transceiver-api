@@ -14,10 +14,12 @@ redhawk_SOURCES_auto += TDC/TDC.cpp
 redhawk_SOURCES_auto += TDC/TDC.h
 redhawk_SOURCES_auto += TDC/TDC_base.cpp
 redhawk_SOURCES_auto += TDC/TDC_base.h
-redhawk_SOURCES_auto += TDC/struct_props.h
+redhawk_SOURCES_auto += TDC/TDC_struct_props.h
 redhawk_SOURCES_auto += RDC/RDC.cpp
 redhawk_SOURCES_auto += RDC/RDC.h
 redhawk_SOURCES_auto += RDC/RDC_base.cpp
 redhawk_SOURCES_auto += RDC/RDC_base.h
-redhawk_SOURCES_auto += RDC/struct_props.h
+redhawk_SOURCES_auto += RDC/RDC_struct_props.h
+redhawk_SOURCES_auto += RDC/RDC_port_impl.cpp
+redhawk_SOURCES_auto += RDC/RDC_port_impl.h
 

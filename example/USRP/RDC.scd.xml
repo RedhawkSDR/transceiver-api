@@ -23,6 +23,9 @@
       <provides repid="IDL:FRONTEND/DigitalTuner:1.0" providesname="DigitalTuner_in">
         <porttype type="control"/>
       </provides>
+      <uses repid="IDL:CF/DeviceStatus:1.0" usesname="DeviceStatus_out">
+        <porttype type="control"/>
+      </uses>
       <uses repid="IDL:BULKIO/dataShort:1.0" usesname="dataShort_out">
         <porttype type="data"/>
       </uses>

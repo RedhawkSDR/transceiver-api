@@ -44,6 +44,8 @@ RDC_base::~RDC_base()
     RFInfo_in = 0;
     DigitalTuner_in->_remove_ref();
     DigitalTuner_in = 0;
+    DeviceStatus_out->_remove_ref();
+    DeviceStatus_out = 0;
     dataShort_out->_remove_ref();
     dataShort_out = 0;
     dataSDDS_out->_remove_ref();
@@ -60,6 +62,9 @@ void RDC_base::construct()
     DigitalTuner_in = new frontend::InDigitalTunerPort("DigitalTuner_in", this);
     DigitalTuner_in->setLogger(this->_baseLog->getChildLogger("DigitalTuner_in", "ports"));
     addPort("DigitalTuner_in", DigitalTuner_in);
+    DeviceStatus_out = new CF_DeviceStatus_Out_i("DeviceStatus_out", this);
+    DeviceStatus_out->setLogger(this->_baseLog->getChildLogger("DeviceStatus_out", "ports"));
+    addPort("DeviceStatus_out", DeviceStatus_out);
     dataShort_out = new bulkio::OutShortPort("dataShort_out");
     dataShort_out->setLogger(this->_baseLog->getChildLogger("dataShort_out", "ports"));
     addPort("dataShort_out", dataShort_out);
