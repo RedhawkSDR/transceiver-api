@@ -819,6 +819,16 @@ double TDC_i::getTunerOutputSampleRate(const std::string& allocation_id){
     return frontend_tuner_status[0].sample_rate;
 }
 
+void TDC_i::configureTuner(const std::string& id, const CF::Properties& tunerSettings){
+    // set the appropriate tuner settings
+}
+
+CF::Properties* TDC_i::getTunerSettings(const std::string& id){
+    // return the tuner settings
+    redhawk::PropertyMap* tuner_settings = new redhawk::PropertyMap();
+    return tuner_settings;
+}
+
 void TDC_i::reset(const std::string& allocation_id, const std::string& stream_id) {
     bulkio::StreamQueue<bulkio::InShortPort>& queue = dataShortTX_in->getQueue();
     _error_state = false;

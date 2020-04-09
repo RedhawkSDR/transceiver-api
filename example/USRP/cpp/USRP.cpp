@@ -917,6 +917,34 @@ double USRP_i::getTunerOutputSampleRate(const std::string& allocation_id){
     return frontend_tuner_status[0].sample_rate;
 }
 
+void USRP_i::configureTuner(const std::string& allocation_id, const CF::Properties& tunerSettings){
+    // set the appropriate tuner settings
+    long idx = getTunerMapping(allocation_id);
+    if (idx < 0) {
+        if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            if (port) {
+                return port->configureTuner(allocation_id.c_str(), tunerSettings);
+            }
+        }
+    }
+}
+
+CF::Properties* USRP_i::getTunerSettings(const std::string& allocation_id){
+    long idx = getTunerMapping(allocation_id);
+    if (idx < 0) {
+        if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            if (port) {
+                return port->getTunerSettings(allocation_id.c_str());
+            }
+        }
+    }
+    // return the tuner settings
+    redhawk::PropertyMap* tuner_settings = new redhawk::PropertyMap();
+    return tuner_settings;
+}
+
 frontend::ScanStatus USRP_i::getScanStatus(const std::string& allocation_id) {
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {

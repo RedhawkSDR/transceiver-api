@@ -53,6 +53,8 @@ class USRP_i : public USRP_base
         void setTunerEnable(const std::string& allocation_id, bool enable);
         double getTunerOutputSampleRate(const std::string& allocation_id);
         void setTunerOutputSampleRate(const std::string& allocation_id, double sr);
+        void configureTuner(const std::string& id, const CF::Properties& tunerSettings);
+        CF::Properties* getTunerSettings(const std::string& id);
         frontend::ScanStatus getScanStatus(const std::string& allocation_id);
         void setScanStartTime(const std::string& allocation_id, const BULKIO::PrecisionUTCTime& start_time);
         void setScanStrategy(const std::string& allocation_id, const frontend::ScanStrategy* scan_strategy);

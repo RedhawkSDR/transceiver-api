@@ -43,6 +43,8 @@ class RDC_i : public RDC_base
         void setTunerEnable(const std::string& allocation_id, bool enable);
         double getTunerOutputSampleRate(const std::string& allocation_id);
         void setTunerOutputSampleRate(const std::string& allocation_id, double sr);
+        void configureTuner(const std::string& id, const CF::Properties& tunerSettings);
+        CF::Properties* getTunerSettings(const std::string& id);
         std::string get_rf_flow_id(const std::string& port_name);
         void set_rf_flow_id(const std::string& port_name, const std::string& id);
         frontend::RFInfoPkt get_rfinfo_pkt(const std::string& port_name);

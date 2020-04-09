@@ -42,6 +42,8 @@ class TDC_i : public TDC_base
         void setTunerEnable(const std::string& allocation_id, bool enable);
         double getTunerOutputSampleRate(const std::string& allocation_id);
         void setTunerOutputSampleRate(const std::string& allocation_id, double sr);
+        void configureTuner(const std::string& id, const CF::Properties& tunerSettings);
+        CF::Properties* getTunerSettings(const std::string& id);
         void reset(const std::string& allocation_id, const std::string& stream_id);
         bool hold(const std::string& allocation_id, const std::string& stream_id);
         std::vector<std::string> held(const std::string& allocation_id, const std::string& stream_id);

@@ -1064,6 +1064,16 @@ double RDC_i::getTunerOutputSampleRate(const std::string& allocation_id){
     return frontend_tuner_status[0].sample_rate;
 }
 
+void RDC_i::configureTuner(const std::string& id, const CF::Properties& tunerSettings){
+    // set the appropriate tuner settings
+}
+
+CF::Properties* RDC_i::getTunerSettings(const std::string& id){
+    // return the tuner settings
+    redhawk::PropertyMap* tuner_settings = new redhawk::PropertyMap();
+    return tuner_settings;
+}
+
 /*************************************************************
 Functions servicing the RFInfo port(s)
 - port_name is the port over which the call was received
