@@ -9,7 +9,7 @@
 #include <frontend/frontend.h>
 #include "RDC_port_impl.h"
 #include <bulkio/bulkio.h>
-#include "RDC_struct_props.h"
+//#include "RDC_struct_props.h"
 #include "../struct_props.h"
 
 #define BOOL_VALUE_HERE 0
