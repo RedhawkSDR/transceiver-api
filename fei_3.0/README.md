@@ -214,6 +214,11 @@ The relationship above is shown graphically, below:
 
 ![Navigating Parent/Child Devices](child_aggregate_device.png)
 
+## Device Kinds
+
+To simplify the search for parent FEI devices, any device that has one or more child devices has the "device_kind" value set to `FEI_PARENT`.
+The "device_kind" value is unrelated to the FEI device type such as RX or RDC.
+
 ## Parent/Child FEI Devices
 ---
 
