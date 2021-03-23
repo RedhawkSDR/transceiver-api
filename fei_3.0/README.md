@@ -216,9 +216,16 @@ The relationship above is shown graphically, below:
 
 ## Device Kinds
 
-The use of `FRONTEND::TUNER` device_kind is now optional since tuner information is available through the device's SCD file.
-To simplify the search for parent FEI devices, any device that has one or more child devices has the "device_kind" value set to `FRONTEND::PARENT`.
-The "device_kind" value is unrelated to the FEI device type such as RX or RDC.
+The device_kind property is used to ease the identification of candidate devices, reducing the search scope.
+The possible device_kind property values that should be used is as follow:
+
+| value | description
+| --- | ---
+| FRONTEND::PARENT | This device has FEI children
+| FRONTEND::TUNER | This is an FEI device that has a tuner control port
+| FRONTEND | This is an FEI device
+
+If a device is both a FRONTEND::PARENT device and a FRONTEND::TUNER device, it should be marked as FRONTEND::PARENT
 
 ## Parent/Child FEI Devices
 ---
