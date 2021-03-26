@@ -235,7 +235,7 @@ The following table describes the specific keywords for FrontEnd devices.
 
 | Name | Type | Description | Notes
 | --- | --- | --- | ---
-| COL_RF | double | Collector center frequency in Hz. | Center frequency of the collector, which is typically thought of as the center frequency of the wideband receiver used to generate the IF data. In the case of a DDC tuner, the value of COL_RF is the center frequency of the input to the CHANNELIZER.
+| COL_RF | double | Collector center frequency in Hz. | Center frequency of the collector, which is typically thought of as the center frequency of the wideband receiver used to generate the IF data. In the case of an RDC, the value of COL_RF is the center frequency of the input to the RX.
 | CHAN_RF | double | Channel center frequency in Hz. | The center frequency of the stream. The value of CHAN_RF is equal to the COL_RF for RX and RX_DIGITIZER tuners but should still be included.
 | FRONTEND::BANDWIDTH | double | Effective bandwidth in Hz. | The effective bandwidth of the stream.
 | FRONTEND::RF_FLOW_ID | string | RF Flow ID of data. | Always include even if the RF Flow ID is blank.
