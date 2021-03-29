@@ -496,7 +496,7 @@ The FRONTEND::transmitter_allocation structure provides information regarding th
 | FRONTEND::transmitter_allocation::min_freq | min_freq | double | In Hz. Requested lower edge of the transmit range (-1 for ignore)
 | FRONTEND::transmitter_allocation::max_freq | max_freq | double | In Hz. Requested upper edge of the transmit range (-1 for ignore)
 | FRONTEND::transmitter_allocation::control_limit | control_limit | double | In seconds. control_limit >= sample_rate/(max_settle_time+min_dwell_time) is met before the next retune (-1 for ignore)
-| FRONTEND::transmitter_allocation::max_power | max_power | double | In Watts. max_power => transmitted power (-1 for ignore)
+| FRONTEND::transmitter_allocation::max_power | max_power | double | In dBm. max_power => transmitted power (values less than or equal to -1000 for ignore)
 
 As seen above, the FRONTEND::transmitter_allocation structure provides parameters for the expected agility of the transmitter; namely the minimum and maximum frequency over which transmissions may occur, the minimum effective dwell time for transmission (defined as the settling time plus the transmission time), and the maximum expected power.
 Each of these members may be set to "ignore" by passing a -1 as its value.
