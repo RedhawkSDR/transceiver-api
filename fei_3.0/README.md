@@ -400,6 +400,30 @@ For the array to function correctly, each wideband receiver must be connected to
 To propagate the rf_flow_id, the rx_digitier's output RFInfo port needs to be connected to each rdc's input RFInfo port.  This functionality is not created by the code generators because it is CONOP-specific and must be implemented by the developer in the port's callback function.
 Note that this connection does not have to be defined in XML; instead it can be implemented programmatically when the devices are instantiated.
 
+## Allocating a tuner
+
+Tuner allocations have remained unchanged from FEI 2.0.
+
+| ID | name | type | description
+| --- | --- | --- | ---
+| FRONTEND::tuner_allocation::tuner_type | double | In Hz. Requested lower edge of the transmit range (-1 for ignore)
+| FRONTEND::tuner_allocation::allocation_id | double | In Hz. Requested upper edge of the transmit range (-1 for ignore)
+| FRONTEND::tuner_allocation::center_frequency | double | In seconds. control_limit >= sample_rate/(max_settle_time+min_dwell_time) is met before the next retune (-1 for ignore)
+| FRONTEND::tuner_allocation::bandwidth | double | In dBm. max_power => transmitted power (values less than or equal to -1000 for ignore)
+| FRONTEND::tuner_allocation::bandwidth_tolerance | double | 
+| FRONTEND::tuner_allocation::sample_rate | double | 
+| FRONTEND::tuner_allocation::sample_rate_tolerance | double | 
+| FRONTEND::tuner_allocation::device_control | boolean | 
+| FRONTEND::tuner_allocation::group_id | string | 
+| FRONTEND::tuner_allocation::rf_flow_id | string | 
+
+Listener allocations are not needed (since there is a single data port per channel), but are still supported.
+
+| ID | name | type | description
+| --- | --- | --- | ---
+| FRONTEND::listener_allocation::existing_allocation_id | string | Allocation to listen to
+| FRONTEND::listener_allocation::listener_allocation_id | string | Listener allocation
+
 ## Allocating a set of coherent channels
 
 Unfortunately, some of the data structures needed to allocate an array are currently not available in the IDE.  So the allocations must be made through a programmatic interface like the Python sandbox.
@@ -476,6 +500,25 @@ snk_2 = sb.launch('process_narrowband')
 allocation_response[0].data_port.connectPort(snk_1.getPort('dataShort_in'), 'connection_id_1')
 allocation_response[1].data_port.connectPort(snk_2.getPort('dataShort_in'), 'connection_id_1')
 ```
+
+## RFInfo
+
+The RFInfo data structure has been updated to provide more information regarding the radio hardware.
+The updated RFInfo data structure is as follows:
+
+| name | type | description
+| --- | --- | ---
+| rf_flow_id | string | unique id that describes this RF flow
+| rf_center_freq | double | center frequency for the tuned band
+| rf_bandwidth | double | bandwidth for the tuner
+| if_center_freq | double | intermediate frequency (equal to rf_center_frequency if single-stage or unknown)
+| spectrum_inverted | boolean | if true, the tuned image is the mirror image of the baseband
+| sensor | SensorInfo | detailed sensor information (e.g.: antenna, mission name)
+| ext_path_delays | PathDelays | frequency-selective delays
+| tdoa_sigma | FreqDependentDeviations | frequency-selective timing deviations
+| fdoa_sigma | FreqDependentDeviations | frequency-selective allan variance
+| capabilities | RFCapabilities | operating center frequency and bandwidth ranges
+| additional_info | CF::Properties | key/value pair describing additional information
 
 ## Transmit CONOP
 
