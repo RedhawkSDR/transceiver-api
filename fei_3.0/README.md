@@ -70,7 +70,7 @@ Minimum ports:
 
 ### RX_ARRAY
 
-A device that aggregates multiple coherent receivers (RX or ABOT)
+A device that aggregates multiple coherent receivers (RX, ARDC, or ABOT)
 
 Minimum ports:
 
