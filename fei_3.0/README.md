@@ -28,7 +28,7 @@ Minimum ports:
 
 ### R2 ARDC  (Analog Receive Digital Channel)
 
-An RX device with a wideband digitized feed
+An RX device with a wideband digitized output feed
 
 Minimum ports:
 
@@ -39,7 +39,7 @@ Minimum ports:
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Instance-specific wideband data feed. This is typically the whole RF bandwidth seen by the receiver. | Yes
 
-### R6 BOT
+### R6 BOT (Bank of Tuners)
 
 A device that contains a bank of tuners.
 The input for this device is a digital feed.
@@ -54,7 +54,7 @@ Minimum ports:
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | provides (input) | Wideband digital feed into the device. | Yes
 
-### R7 Analog BOT
+### R7 ABOT (Analog Bank of Tuners)
 
 A device that contains a bank of tuners.
 The input for this device is an analog feed.
@@ -70,7 +70,7 @@ Minimum ports:
 
 ### RX_ARRAY
 
-A device that aggregates multiple coherent receivers (RX or RX_DIGITIZER)
+A device that aggregates multiple coherent receivers (RX or ABOT)
 
 Minimum ports:
 
@@ -112,7 +112,7 @@ Minimum ports:
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Digital data feed | Yes
 
-Note: If a system has a single RDC and the RX stage does not have a wideband digitized feed, then there is an implied RX stage, and the RDC can be connected directly to the antenna.
+This device only exists as a child of either R6 or R7
 
 ### R4 SRDC (Snapshot Receive Digital Channel)
 
@@ -126,7 +126,7 @@ Minimum ports:
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Digital data feed | Yes
 
-Note: If a system has a single RDC and the RX stage does not have a wideband digitized feed, then there is an implied RX stage, and the RDC can be connected directly to the antenna.
+This device only exists as a child of either R6 or R7
 
 ### R5 DRDC (Delay Receive Digital Channel)
 
@@ -140,7 +140,7 @@ Minimum ports:
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Digital data feed | Yes
 
-Note: If a system has a single RDC and the RX stage does not have a wideband digitized feed, then there is an implied RX stage, and the RDC can be connected directly to the antenna.
+This device only exists as a child of either R6 or R7
 
 ### TDC (Transmit Digital Channel)
 
