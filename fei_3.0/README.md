@@ -14,7 +14,7 @@ The following sections describe each device type in detail.
 The provided table describes the ports that are expected in each device type.
 The last column refers to a new allocation call that REDHAWK devices support that provides the caller with feedback; more on this later.
 
-### RX
+### R1 RX
 
 The RX device is an analog receiver.
 
@@ -26,7 +26,7 @@ Minimum ports:
 | RFINFO | RFINFO_out | data | uses (output) | RF information from the device to follow-on digitizers | No
 | AnalogTuner or AnalogScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 
-### RX_DIGITIZER
+### R2 ARDC  (Analog Receive Digital Channel)
 
 An RX device with a wideband digitized feed
 
@@ -37,7 +37,36 @@ Minimum ports:
 | RFINFO | RFINFO_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
 | RFINFO | RFINFO_out | data | uses (output) | RF information from the device to follow-on digitizers | No
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
-| Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Instance-specific wideband data feed. This is typically the whole RF bandwidth seen by the receiver; either time-based or frequency-based. Data could be continuous or snapshots. | Yes
+| Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Instance-specific wideband data feed. This is typically the whole RF bandwidth seen by the receiver. | Yes
+
+### R6 BOT
+
+A device that contains a bank of tuners.
+The input for this device is a digital feed.
+Digitized channels are output through child devices (R3, R4, or R5).
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | returned by `allocate()`
+| --- | --- | --- | --- | --- | ---
+| RFINFO | RFINFO_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
+| RFINFO | RFINFO_out | data | uses (output) | RF information from the device to follow-on digitizers | No
+| DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+| Bulk IO | <&nbsp;any&nbsp;> | data | provides (input) | Wideband digital feed into the device. | Yes
+
+### R7 Analog BOT
+
+A device that contains a bank of tuners.
+The input for this device is an analog feed.
+Digitized channels are output through child devices (R3, R4, or R5).
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | returned by `allocate()`
+| --- | --- | --- | --- | --- | ---
+| RFINFO | RFINFO_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
+| RFINFO | RFINFO_out | data | uses (output) | RF information from the device to follow-on digitizers | No
+| DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 
 ### RX_ARRAY
 
@@ -71,9 +100,37 @@ Minimum ports:
 | --- | --- | --- | --- | --- | ---
 | AnalogTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 
-### RDC (Receive Digital Channel)
+### R3 RDC (Receive Digital Channel)
 
-RDC is a single received digitized physical channel; this is a channel that is adequate for processing.
+RDC is a single received continuously digitized physical channel.
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | returned by `allocate()`
+| --- | --- | --- | --- | --- | ---
+| RFINFO | RFINFO_in | data | provides (input) | RF information from the RX or RX_DIGITIZER (flow-through from the antenna), such as rf_flow_id | No
+| DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+| Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Digital data feed | Yes
+
+Note: If a system has a single RDC and the RX stage does not have a wideband digitized feed, then there is an implied RX stage, and the RDC can be connected directly to the antenna.
+
+### R4 SRDC (Snapshot Receive Digital Channel)
+
+SRDC is a single received snapshot digitized physical channel.
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | returned by `allocate()`
+| --- | --- | --- | --- | --- | ---
+| RFINFO | RFINFO_in | data | provides (input) | RF information from the RX or RX_DIGITIZER (flow-through from the antenna), such as rf_flow_id | No
+| DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+| Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Digital data feed | Yes
+
+Note: If a system has a single RDC and the RX stage does not have a wideband digitized feed, then there is an implied RX stage, and the RDC can be connected directly to the antenna.
+
+### R5 DRDC (Delay Receive Digital Channel)
+
+DRDC is version of RDC that produced a single received time-delayed, continuously digitized physical channel.
 
 Minimum ports:
 
