@@ -690,7 +690,9 @@ redhawk::buffer<short> Packet3(size_packet_3);
 tstamp.twsec = twsec + t3;
 outputStream.write(Packet3, tstamp);
 ```
-As shown above, the different packets are wqueued through the port's stream API, with the provided timestamp giving the transmitter transmission directions.
+As shown above, the different packets are queued through the port's stream API, with the provided timestamp giving the transmitter transmission directions.
+
+Note that transmit queues are not supported in VITA49 or SDDS ports.
 
 BULK IO is also used when transmissions are to be sent over different frequencies.
 The re-tuning instructions are inserted as keyword CHAN_RF in SRI updates, as seen below:
