@@ -3,18 +3,22 @@
 
 The set of FEI devices is:
 - RX
-- RX_DIGITIZER
+- ARDC (Analog Receive Digital Channel)
+- BOT (Bank of Tuners)
+- ABOT (Analog Bank of Tuners)
 - RX_ARRAY
 - TX
 - TX_ARRAY
 - RDC (Receive Digital Channel)
+- SRDC (Snapshot Receive Digital Channel)
+- DRDC (Delay Receive Digital Channel)
 - TDC (Transmit Digital Channel)
 
 The following sections describe each device type in detail.
 The provided table describes the ports that are expected in each device type.
 The last column refers to a new allocation call that REDHAWK devices support that provides the caller with feedback; more on this later.
 
-### R1 RX
+### RX
 
 The RX device is an analog receiver.
 
@@ -26,7 +30,7 @@ Minimum ports:
 | RFINFO | RFINFO_out | data | uses (output) | RF information from the device to follow-on digitizers | No
 | AnalogTuner or AnalogScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 
-### R2 ARDC  (Analog Receive Digital Channel)
+### ARDC  (Analog Receive Digital Channel)
 
 An RX device with a wideband digitized output feed
 
@@ -39,7 +43,7 @@ Minimum ports:
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Instance-specific wideband data feed. This is typically the whole RF bandwidth seen by the receiver. | Yes
 
-### R6 BOT (Bank of Tuners)
+### BOT (Bank of Tuners)
 
 A device that contains a bank of tuners.
 The input for this device is a digital feed.
@@ -54,7 +58,7 @@ Minimum ports:
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | provides (input) | Wideband digital feed into the device. | Yes
 
-### R7 ABOT (Analog Bank of Tuners)
+### ABOT (Analog Bank of Tuners)
 
 A device that contains a bank of tuners.
 The input for this device is an analog feed.
@@ -100,7 +104,7 @@ Minimum ports:
 | --- | --- | --- | --- | --- | ---
 | AnalogTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 
-### R3 RDC (Receive Digital Channel)
+### RDC (Receive Digital Channel)
 
 RDC is a single received continuously digitized physical channel.
 
@@ -114,7 +118,7 @@ Minimum ports:
 
 This device only exists as a child of either R6 or R7
 
-### R4 SRDC (Snapshot Receive Digital Channel)
+### SRDC (Snapshot Receive Digital Channel)
 
 SRDC is a single received snapshot digitized physical channel.
 
@@ -128,7 +132,7 @@ Minimum ports:
 
 This device only exists as a child of either R6 or R7
 
-### R5 DRDC (Delay Receive Digital Channel)
+### DRDC (Delay Receive Digital Channel)
 
 DRDC is version of RDC that produced a single received time-delayed, continuously digitized physical channel.
 
@@ -576,6 +580,33 @@ The updated RFInfo data structure is as follows:
 | fdoa_sigma | FreqDependentDeviations | frequency-selective allan variance
 | capabilities | RFCapabilities | operating center frequency and bandwidth ranges
 | additional_info | CF::Properties | key/value pair describing additional information
+
+## Connection Tracing
+
+RFInfo, RFSource, NavData, and GPS ports inherit from the CF::UpstreamRegistrar interface.
+The CF::UpstreamRegistrar interface is as follows:
+
+```idl
+module CF {
+    struct UpstreamTuple {
+        Object upstream;
+        Object port;
+    };
+
+    typedef sequence <UpstreamTuple> UpstreamSequence;
+
+    interface UpstreamRegistrar {
+        void setUpstream(in UpstreamTuple src);
+        void removeUpstream(in UpstreamTuple src);
+        readonly attribute UpstreamSequence upstreams;
+    };
+}
+```
+
+The CF::UpstreamRegistrar interface allows upstream connections to register themselves.
+As part of the port implementation, upstream ports invoke the setUpstream method when a connection is established and the removeUpstream method when the connection is removed.
+The upstreams readonly attribute provides a sequence of all connections to that port.
+Each element in the connection description includes a pointer to the upstream object (e.g.: device or component) and the upstream port instance.
 
 ## Transmit CONOP
 
