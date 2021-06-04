@@ -2,21 +2,33 @@
 ## Device Types
 
 The set of FEI devices is:
+- ANTENNA
 - RX
-- ARDC (Analog Receive Digital Channel)
-- BOT (Bank of Tuners)
-- ABOT (Analog Bank of Tuners)
 - RX_ARRAY
-- TX
-- TX_ARRAY
+- DBOT (Digital input Bank of Tuners)
+- ABOT (Analog input Bank of Tuners)
+- ARDC (Analog Receive Digital Channel)
 - RDC (Receive Digital Channel)
 - SRDC (Snapshot Receive Digital Channel)
 - DRDC (Delay Receive Digital Channel)
+- TX
+- TX_ARRAY
 - TDC (Transmit Digital Channel)
 
 The following sections describe each device type in detail.
 The provided table describes the ports that are expected in each device type.
 The last column refers to a new allocation call that REDHAWK devices support that provides the caller with feedback; more on this later.
+
+### ANTENNA
+
+The ANTENNA device is an analog receiver.
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | returned by `allocate()`
+| --- | --- | --- | --- | --- | ---
+| RFSource | RFSource_in | data | provides (input) | Set of RF inputs that the antenna could switch to and the current RF input | No
+| RFInfo | RFInfo_out | data | uses (output) | RF information from the antenna to follow-on receivers | No
 
 ### RX
 
@@ -26,51 +38,9 @@ Minimum ports:
 
 | Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
-| RFINFO | RFINFO_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
-| RFINFO | RFINFO_out | data | uses (output) | RF information from the device to follow-on digitizers | No
+| RFInfo | RFInfo_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
+| RFInfo | RFInfo_out | data | uses (output) | RF information from the device to follow-on digitizers | No
 | AnalogTuner or AnalogScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
-
-### ARDC  (Analog Receive Digital Channel)
-
-An RX device with a wideband digitized output feed
-
-Minimum ports:
-
-| Type | name | purpose | direction | description | returned by `allocate()`
-| --- | --- | --- | --- | --- | ---
-| RFINFO | RFINFO_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
-| RFINFO | RFINFO_out | data | uses (output) | RF information from the device to follow-on digitizers | No
-| DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
-| Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Instance-specific wideband data feed. This is typically the whole RF bandwidth seen by the receiver. | Yes
-
-### BOT (Bank of Tuners)
-
-A device that contains a bank of tuners.
-The input for this device is a digital feed.
-Digitized channels are output through child devices (R3, R4, or R5).
-
-Minimum ports:
-
-| Type | name | purpose | direction | description | returned by `allocate()`
-| --- | --- | --- | --- | --- | ---
-| RFINFO | RFINFO_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
-| RFINFO | RFINFO_out | data | uses (output) | RF information from the device to follow-on digitizers | No
-| DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
-| Bulk IO | <&nbsp;any&nbsp;> | data | provides (input) | Wideband digital feed into the device. | Yes
-
-### ABOT (Analog Bank of Tuners)
-
-A device that contains a bank of tuners.
-The input for this device is an analog feed.
-Digitized channels are output through child devices (R3, R4, or R5).
-
-Minimum ports:
-
-| Type | name | purpose | direction | description | returned by `allocate()`
-| --- | --- | --- | --- | --- | ---
-| RFINFO | RFINFO_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
-| RFINFO | RFINFO_out | data | uses (output) | RF information from the device to follow-on digitizers | No
-| DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 
 ### RX_ARRAY
 
@@ -82,27 +52,47 @@ Minimum ports:
 | --- | --- | --- | --- | --- | ---
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 
-### TX
+### DBOT (Digital input Bank of Tuners)
 
-The TX device is an analog receiver.
-
-Minimum ports:
-
-| Type | name | purpose | direction | description | returned by `allocate()`
-| --- | --- | --- | --- | --- | ---
-| RFINFO | RFINFO_in | data | provides (input) | RF information from the processing flow | No
-| RFINFO | RFINFO_out | data | uses (output) | RF information for the antenna | No
-| AnalogTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
-
-### TX_ARRAY
-
-A device that aggregates multiple coherent transmitters (TX)
+A device that contains a bank of tuners.
+The input for this device is a digital feed.
+Digitized channels are output through child devices (R3, R4, or R5).
 
 Minimum ports:
 
 | Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
-| AnalogTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+| RFInfo | RFInfo_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
+| RFInfo | RFInfo_out | data | uses (output) | RF information from the device to follow-on digitizers | No
+| DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+| Bulk IO | <&nbsp;any&nbsp;> | data | provides (input) | Wideband digital feed into the device. | Yes
+
+### ABOT (Analog input Bank of Tuners)
+
+A device that contains a bank of tuners.
+The input for this device is an analog feed.
+Digitized channels are output through child devices (R3, R4, or R5).
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | returned by `allocate()`
+| --- | --- | --- | --- | --- | ---
+| RFInfo | RFInfo_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
+| RFInfo | RFInfo_out | data | uses (output) | RF information from the device to follow-on digitizers | No
+| DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+
+### ARDC  (Analog Receive Digital Channel)
+
+An RX device with a wideband digitized output feed
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | returned by `allocate()`
+| --- | --- | --- | --- | --- | ---
+| RFInfo | RFInfo_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
+| RFInfo | RFInfo_out | data | uses (output) | RF information from the device to follow-on digitizers | No
+| DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+| Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Instance-specific wideband data feed. This is typically the whole RF bandwidth seen by the receiver. | Yes
 
 ### RDC (Receive Digital Channel)
 
@@ -112,7 +102,7 @@ Minimum ports:
 
 | Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
-| RFINFO | RFINFO_in | data | provides (input) | RF information from the RX or RX_DIGITIZER (flow-through from the antenna), such as rf_flow_id | No
+| RFInfo | RFInfo_in | data | provides (input) | RF information from the RX or RX_DIGITIZER (flow-through from the antenna), such as rf_flow_id | No
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Digital data feed | Yes
 
@@ -126,7 +116,7 @@ Minimum ports:
 
 | Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
-| RFINFO | RFINFO_in | data | provides (input) | RF information from the RX or RX_DIGITIZER (flow-through from the antenna), such as rf_flow_id | No
+| RFInfo | RFInfo_in | data | provides (input) | RF information from the RX or RX_DIGITIZER (flow-through from the antenna), such as rf_flow_id | No
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Digital data feed | Yes
 
@@ -140,11 +130,33 @@ Minimum ports:
 
 | Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
-| RFINFO | RFINFO_in | data | provides (input) | RF information from the RX or RX_DIGITIZER (flow-through from the antenna), such as rf_flow_id | No
+| RFInfo | RFInfo_in | data | provides (input) | RF information from the RX or RX_DIGITIZER (flow-through from the antenna), such as rf_flow_id | No
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Digital data feed | Yes
 
 This device only exists as a child of either R6 or R7
+
+### TX
+
+The TX device is an analog receiver.
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | returned by `allocate()`
+| --- | --- | --- | --- | --- | ---
+| RFInfo | RFInfo_in | data | provides (input) | RF information from the processing flow | No
+| RFInfo | RFInfo_out | data | uses (output) | RF information for the antenna | No
+| AnalogTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
+
+### TX_ARRAY
+
+A device that aggregates multiple coherent transmitters (TX)
+
+Minimum ports:
+
+| Type | name | purpose | direction | description | returned by `allocate()`
+| --- | --- | --- | --- | --- | ---
+| AnalogTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 
 ### TDC (Transmit Digital Channel)
 
@@ -154,7 +166,7 @@ Minimum ports:
 
 | Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
-| RFINFO | RFINFO_out | data | uses (output) | RF information for the TX (flow-through to the antenna), such as rf_flow_id | No
+| RFInfo | RFInfo_out | data | uses (output) | RF information for the TX (flow-through to the antenna), such as rf_flow_id | No
 | TransmitControl | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | provides (input) | Digital data feed to be transmitted | Yes
 
