@@ -496,22 +496,38 @@ Listener allocations are not needed (since there is a single data port per chann
 
 ## Allocation extensions
 
+The following allocations can be passed along with FRONTEND::tuner_allocation to specialize the allocation_id
+
+The FRONTEND::snapshot allocation is used to specify snapshot parameters.
+The response to an allocation including FRONTEND::snapshot is an SRDC device
+
 snapshot
+
+The FRONTEND::delay allocation is used to specify time-delay parameters for the data feed.
+The response to an allocation including FRONTEND::delay is an DRDC device
 
 delay
 
-streamid
-- string request
+The FRONTEND::stream_id allocation is used to request a particular stream id for the generated data sets.
+The response to an allocation including FRONTEND::strema_id is an RDC, ARDC, SRDC, or DRDC device
 
-data type request
-- bulkio
-  - complex/real
-- payload description (SDDS and V49 only):
-  - native type
-  - endianness
+| ID | name | type | description
+| --- | --- | --- | ---
+| FRONTEND::stream_id::requested_stream_id | string | Requested stream id for generated data
 
+The FRONTEND::data_format allocation is used to request a particular data type for the generated data.
 
+| ID | name | type | description
+| --- | --- | --- | ---
+| FRONTEND::data_format::bulkio_type | string | Repository ID for the requested type (e.g.: IDL:BULKIO/dataShort:1.0)
+| FRONTEND::data_format::mode | boolean | Set true for complex, false for real
 
+The FRONTEND::payload_format allocation is used to request the payload in the case of SDDS or VITA49 data sets
+
+| ID | name | type | description
+| --- | --- | --- | ---
+| FRONTEND::payload_format::native_type | string | binary format (e.g.: float, short, short, ushort)
+| FRONTEND::payload_format::endian | boolean | Set true for big endian, false for little endian
 
 ## Allocating a set of coherent channels
 
