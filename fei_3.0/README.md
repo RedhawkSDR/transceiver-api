@@ -56,7 +56,7 @@ Minimum ports:
 
 A device that contains a bank of tuners.
 The input for this device is a digital feed.
-Digitized channels are output through child devices (R3, R4, or R5).
+Digitized channels are output through child devices (RDC, SRDC, or DRDC).
 
 Minimum ports:
 
@@ -71,7 +71,7 @@ Minimum ports:
 
 A device that contains a bank of tuners.
 The input for this device is an analog feed.
-Digitized channels are output through child devices (R3, R4, or R5).
+Digitized channels are output through child devices (RDC, SRDC, or DRDC).
 
 Minimum ports:
 
@@ -102,11 +102,11 @@ Minimum ports:
 
 | Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
-| RFInfo | RFInfo_in | data | provides (input) | RF information from the RX or RX_DIGITIZER (flow-through from the antenna), such as rf_flow_id | No
+| RFInfo | RFInfo_in | data | provides (input) | Optional. RF information from the RX, ABOT, or DBOT (flow-through from the antenna), such as rf_flow_id | No
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Digital data feed | Yes
 
-This device only exists as a child of either R6 or R7
+This device only exists as a child of either ABOT or DBOT
 
 ### SRDC (Snapshot Receive Digital Channel)
 
@@ -116,11 +116,11 @@ Minimum ports:
 
 | Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
-| RFInfo | RFInfo_in | data | provides (input) | RF information from the RX or RX_DIGITIZER (flow-through from the antenna), such as rf_flow_id | No
+| RFInfo | RFInfo_in | data | provides (input) | Optional. RF information from the RX, ABOT, or DBOT (flow-through from the antenna), such as rf_flow_id | No
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Digital data feed | Yes
 
-This device only exists as a child of either R6 or R7
+This device only exists as a child of either ABOT or DBOT
 
 ### DRDC (Delay Receive Digital Channel)
 
@@ -130,11 +130,11 @@ Minimum ports:
 
 | Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
-| RFInfo | RFInfo_in | data | provides (input) | RF information from the RX or RX_DIGITIZER (flow-through from the antenna), such as rf_flow_id | No
+| RFInfo | RFInfo_in | data | provides (input) | Optional. RF information from the RX, ABOT, or DBOT (flow-through from the antenna), such as rf_flow_id | No
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | uses (output) | Digital data feed | Yes
 
-This device only exists as a child of either R6 or R7
+This device only exists as a child of either ABOT or DBOT
 
 ### TX
 
@@ -295,10 +295,7 @@ The possible device_kind property values that should be used is as follow:
 | value | description
 | --- | ---
 | FRONTEND::PARENT | This device has FEI children
-| FRONTEND::TUNER | This is an FEI device that has a tuner control port
 | FRONTEND | This is an FEI device
-
-If a device is both a FRONTEND::PARENT device and a FRONTEND::TUNER device, it should be marked as FRONTEND::PARENT
 
 ## SRI and Keywords
 
@@ -309,7 +306,7 @@ The following table describes the specific keywords for FrontEnd devices.
 | Name | Type | Description | Notes
 | --- | --- | --- | ---
 | COL_RF | double | Collector center frequency in Hz. | Center frequency of the collector, which is typically thought of as the center frequency of the wideband receiver used to generate the IF data. In the case of an RDC, the value of COL_RF is the center frequency of the input to the RX.
-| CHAN_RF | double | Channel center frequency in Hz. | The center frequency of the stream. The value of CHAN_RF is equal to the COL_RF for RX and RX_DIGITIZER tuners but should still be included.
+| CHAN_RF | double | Channel center frequency in Hz. | The center frequency of the stream. The value of CHAN_RF is equal to the COL_RF for RX, ABOT, or DBOT tuners but should still be included.
 | FRONTEND::BANDWIDTH | double | Effective bandwidth in Hz. | The effective bandwidth of the stream.
 | FRONTEND::RF_FLOW_ID | string | RF Flow ID of data. | Always include even if the RF Flow ID is blank.
 | FRONTEND::DEVICE_ID | string | The ID of the device. | Component ref ID, which allows downstream users to gain a reference to the device that created the data.
@@ -325,10 +322,10 @@ For example, in the case where the configuration of the underlying RF hardware i
 
 As seen in the example above, the underlying hardware is a transceiver with two receive channels and one transmit channel.
 Each devices is quasi-independent, sharing some common device control functionality, but each subsystem operating in a semi-independent fashion.
-Also notice that because the RDC share a single receiver, they need a common RX_DIGITIZER, while the TDC does not require a TX device because there is only one TDC.
+Also notice that because the RDC share a single receiver, they need a common ABOT or DBOT, while the TDC does not require a TX device because there is only one TDC.
 
 Note: the parent device (WB Transceiver and Channelizer) is not an FEI device.
-This device is a custom device that aggregates the underlying devices; in this case RX_DIGITIZER, RDC, and TDC.
+This device is a custom device that aggregates the underlying devices; in this case ABOT, RDC, and TDC.
 The parent device delegates the allocations to the child devices and can promote either ports or properties of the different child devices.
 Because allocations are returned with a reference to the child device satisfying the allocation (more on this in the next section), the parent device can be a custom device provided for convenience.
 
@@ -400,20 +397,20 @@ The return value from the allocation to the parent device is the child device's 
 
 When ingesting data from coherent tuners, allocations must be coordinated between multiple independent tuners; each of these tuners is associated with a different RF receiver and a different antenna. While each of these tuners is ostensibly independent, they must all be tuned to the same frequency over the same bandwith, with data generated coherently (in lock-step) between the different tuners.
 
-The mechanism for supporting the process has a parent (aggregate) device for the array, and child devices for each receiver. Each receiver has a set of child devices:  one for each tuner. In this case, each tuner (RDC FEI device) is a child of a wideband receiver (RX or RX_DIGITIZER FEI device), and each wideband receiver is the child of the array device proxy (RX_ARRAY FEI device).
+The mechanism for supporting the process has a parent (aggregate) device for the array, and child devices for each receiver. Each receiver has a set of child devices:  one for each tuner. In this case, each tuner (RDC FEI device) is a child of a wideband receiver (RX or ABOT FEI device), and each wideband receiver is the child of the array device proxy (RX_ARRAY FEI device).
 
-The wideband receiver is an RX_DIGITIZER if it contains a wideband data output and RX if it does not.
-An RX_DIGITIZER is a combination of RX and RDC, so a single tuner attached to a parent RX (or RX_DIGITIZER) is a RDC.
-Multiple receivers (RX or RX_DIGITIZER) can be combined into a coherent set, where the set is controlled by RX_ARRAY.
+The wideband receiver is an ABOT if it contains narrowband tuners, ARDC if it is a single channel, and RX if it does not.
+An ARDC is a combination of ABOT and a single RDC.
+Multiple receivers (RX, ABOT, or ARDC) can be combined into a coherent set, where the set is controlled by RX_ARRAY.
 
 This device parent hierarchy is shown below:
 
 ![Device Hierarchy](device_hierarchy.png)
 
-The programmatic deployment of this hierarchy uses the `addChild()` method built into each device. For example, the following code in rx_array.cpp shows a single RX_ARRAY (rx_array_i) creating two instances of RX_DIGITIZER (rx_digitizer_i), each with 2 RDC (rdc_i).
+The programmatic deployment of this hierarchy uses the `addChild()` method built into each device. For example, the following code in rx_array.cpp shows a single RX_ARRAY (rx_array_i) creating two instances of ABOT (abot_i), each with 2 RDC (rdc_i).
 
 ``` c++
-#include "rx_digitizer/rx_digitizer.h"
+#include "abot/abot.h"
 #include "rdc/rdc.h"
 ```
 
@@ -421,22 +418,22 @@ The programmatic deployment of this hierarchy uses the `addChild()` method built
 // this device instantiation code was added to the constructor, but it does not need to be added there
 void rx_array_i::constructor()
 {
-    std::string rx_digitizer_name("rx_digitizer");
+    std::string abot_name("abot");
     std::string rdc_name("rdc");
 
-    rx_digitizer_i* rx_digitizer_1 = this->addChild<rx_digitizer_i>(rx_digitizer_name);
-    rdc_i* rdc_1_1 = rx_digitizer_1->addChild<rdc_i>(rdc_name);
-    rdc_i* rdc_1_2 = rx_digitizer_1->addChild<rdc_i>(rdc_name);
+    abot_i* abot_1 = this->addChild<abot_i>(abot_name);
+    rdc_i* rdc_1_1 = abot_1->addChild<rdc_i>(rdc_name);
+    rdc_i* rdc_1_2 = abot_1->addChild<rdc_i>(rdc_name);
 
-    rx_digitizer_i* rx_digitizer_2 = this->addChild<rx_digitizer_i>(rx_digitizer_name);
-    rdc_i* rdc_2_1 = rx_digitizer_2->addChild<rdc_i>(rdc_name);
-    rdc_i* rdc_2_2 = rx_digitizer_2->addChild<rdc_i>(rdc_name);
+    abot_i* abot_2 = this->addChild<abot_i>(abot_name);
+    rdc_i* rdc_2_1 = abot_2->addChild<rdc_i>(rdc_name);
+    rdc_i* rdc_2_2 = abot_2->addChild<rdc_i>(rdc_name);
 }
 ```
 
 As shown above, the device hierarchy is defined programmatically in the parent device, in this case the RX_ARRAY device.
 This relationship can be shown programmatically from the Python sandbox.
-For example, assuming that the Python session is attached to a domain with a deployment of the devices and node included in this project, the following code can be used to retrieve the array, the rx_digitizer receivers, and the single-channel rdc tuners:
+For example, assuming that the Python session is attached to a domain with a deployment of the devices and node included in this project, the following code can be used to retrieve the array, the abot receivers, and the single-channel rdc tuners:
 
 ```python
 from ossie.utils import redhawk
@@ -496,6 +493,25 @@ Listener allocations are not needed (since there is a single data port per chann
 | --- | --- | --- | ---
 | FRONTEND::listener_allocation::existing_allocation_id | string | Allocation to listen to
 | FRONTEND::listener_allocation::listener_allocation_id | string | Listener allocation
+
+## Allocation extensions
+
+snapshot
+
+delay
+
+streamid
+- string request
+
+data type request
+- bulkio
+  - complex/real
+- payload description (SDDS and V49 only):
+  - native type
+  - endianness
+
+
+
 
 ## Allocating a set of coherent channels
 
