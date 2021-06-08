@@ -501,7 +501,12 @@ The following allocations can be passed along with FRONTEND::tuner_allocation to
 The FRONTEND::snapshot allocation is used to specify snapshot parameters.
 The response to an allocation including FRONTEND::snapshot is an SRDC device
 
-snapshot
+| ID | name | type | description
+| --- | --- | --- | ---
+| FRONTEND::snapshot_start::whole_seconds | double | J1970 GMT
+| FRONTEND::snapshot_start::partial_seconds| double | 0.0 to 1.0
+| FRONTEND::snapshot_stop::whole_seconds | double | J1970 GMT
+| FRONTEND::snapshot_stop::partial_seconds| double | 0.0 to 1.0
 
 The FRONTEND::delay allocation is used to specify time-delay parameters for the data feed.
 The response to an allocation including FRONTEND::delay is an DRDC device
