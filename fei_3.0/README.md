@@ -511,7 +511,12 @@ The response to an allocation including FRONTEND::snapshot is an SRDC device
 The FRONTEND::delay allocation is used to specify time-delay parameters for the data feed.
 The response to an allocation including FRONTEND::delay is an DRDC device
 
-delay
+
+| ID | name | type | description
+| --- | --- | --- | ---
+| FRONTEND::delay::whole_seconds | double | J1970 GMT
+| FRONTEND::delay::partial_seconds| double | 0.0 to 1.0
+| FRONTEND::delay::relative | boolean | True if relative to now, false if absolute (UTC)
 
 The FRONTEND::stream_id allocation is used to request a particular stream id for the generated data sets.
 The response to an allocation including FRONTEND::strema_id is an RDC, ARDC, SRDC, or DRDC device
