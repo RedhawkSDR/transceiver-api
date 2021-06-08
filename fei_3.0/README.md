@@ -511,7 +511,6 @@ The response to an allocation including FRONTEND::snapshot is an SRDC device
 The FRONTEND::delay allocation is used to specify time-delay parameters for the data feed.
 The response to an allocation including FRONTEND::delay is an DRDC device
 
-
 | ID | name | type | description
 | --- | --- | --- | ---
 | FRONTEND::delay::whole_seconds | double | J1970 GMT
