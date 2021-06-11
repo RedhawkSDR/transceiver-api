@@ -476,16 +476,16 @@ Tuner allocations have remained unchanged from FEI 2.0.
 
 | ID | name | type | description
 | --- | --- | --- | ---
-| FRONTEND::tuner_allocation::tuner_type | double | In Hz. Requested lower edge of the transmit range (-1 for ignore)
-| FRONTEND::tuner_allocation::allocation_id | double | In Hz. Requested upper edge of the transmit range (-1 for ignore)
-| FRONTEND::tuner_allocation::center_frequency | double | In seconds. control_limit >= sample_rate/(max_settle_time+min_dwell_time) is met before the next retune (-1 for ignore)
-| FRONTEND::tuner_allocation::bandwidth | double | In dBm. max_power => transmitted power (values less than or equal to -1000 for ignore)
-| FRONTEND::tuner_allocation::bandwidth_tolerance | double | 
-| FRONTEND::tuner_allocation::sample_rate | double | 
-| FRONTEND::tuner_allocation::sample_rate_tolerance | double | 
-| FRONTEND::tuner_allocation::device_control | boolean | 
-| FRONTEND::tuner_allocation::group_id | string | 
-| FRONTEND::tuner_allocation::rf_flow_id | string | 
+| FRONTEND::tuner_allocation::tuner_type | string | Device type
+| FRONTEND::tuner_allocation::allocation_id | string | Requested allocation id (empty string if does not matter). Will cause an error if not available
+| FRONTEND::tuner_allocation::center_frequency | double | Requested center frequency
+| FRONTEND::tuner_allocation::bandwidth | double | Requested bandwidth
+| FRONTEND::tuner_allocation::bandwidth_tolerance | double | Allowable percent above requested bandwidth (e.g.: 100 would be twice)
+| FRONTEND::tuner_allocation::sample_rate | double | Requested sample rate
+| FRONTEND::tuner_allocation::sample_rate_tolerance | double | Allowable percent above requested sample rate
+| FRONTEND::tuner_allocation::device_control | boolean | True: Has control over the device to make changes, False: marked as listening to device and wants to be notified when de-allocated
+| FRONTEND::tuner_allocation::group_id | string | Unique identifier that specifies the group a device must be in. Must match group_id on the device
+| FRONTEND::tuner_allocation::rf_flow_id | string | Specifies the RF flow of a specific input source to allocate against. Empty if the rf_flow_id does not matter
 
 Listener allocations are not needed (since there is a single data port per channel), but are still supported.
 
