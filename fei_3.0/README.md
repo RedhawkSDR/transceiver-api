@@ -62,8 +62,6 @@ Minimum ports:
 
 | Type | name | purpose | direction | description | returned by `allocate()`
 | --- | --- | --- | --- | --- | ---
-| RFInfo | RFInfo_in | data | provides (input) | RF information from the antenna, such as rf_flow_id | No
-| RFInfo | RFInfo_out | data | uses (output) | RF information from the device to follow-on digitizers | No
 | DigitalTuner or DigitalScanningTuner | <&nbsp;any&nbsp;> | control | provides (input) | RF control such as setting center frequency | Yes
 | Bulk IO | <&nbsp;any&nbsp;> | data | provides (input) | Wideband digital feed into the device. | Yes
 
@@ -296,6 +294,9 @@ The possible device_kind property values that should be used is as follow:
 | --- | ---
 | FRONTEND::PARENT | This device has FEI children
 | FRONTEND | This is an FEI device
+| FRONTEND::GPS | Device that originates GPS information
+| FRONTEND::NAVIGATION | Device that originates Navigation information
+| FRONTEND::RFINFO | Device that originates RF Info (i.e.: an antenna)
 
 ## SRI and Keywords
 
