@@ -910,6 +910,7 @@ module CF {
 
     // generic device status
     struct DeviceStatusType {
+        string                      device_id;      // unique device instance id
         string                      allocation_id;
         CF::UTCTime                 timestamp;
         CF::DeviceStatusCodeType    status;         // device status
