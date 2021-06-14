@@ -338,12 +338,20 @@ Single allocations can now be made through the `allocate()` call.
 The `allocate()` method is defined as follows:
 
 ```idl
+struct PortDescription {
+    Object port_ref;            // port object
+    string name;                // port name
+    string repository_id;       // port interface id (e.g.: "IDL:BULKIO/dataFloat:1.0")
+};
+
+typedef sequence <PortDescription> PortDescriptions;
+
 struct Allocation {
-    CF::Device device_ref;      // device that satisfied the allocation (the allocation could have been delegated)
-    Object data_port;           // data port ('provides' for TX, 'uses' for RX)
-    Object control_port;        // control port - object ref
-    CF::Properties allocated;   // what allocation values the device met
-    string alloc_id;            // unique identifier (used to deallocate)
+    CF::Device device_ref;              // device that satisfied the allocation (the allocation could have been delegated)
+    PortDescriptions data_ports;        // data ports ('provides' for TX, 'uses' for RX)
+    PortDescriptions control_ports;     // control ports
+    CF::Properties allocated;           // what allocation values the device met
+    string alloc_id;                    // unique identifier (used to deallocate)
 };
 typedef sequence <Allocation> Allocations;
 
