@@ -691,6 +691,19 @@ The updated RFInfo data structure is as follows:
 | capabilities | RFCapabilities | operating center frequency and bandwidth ranges
 | additional_info | CF::Properties | key/value pair describing additional information
 
+The RFCapabilities structure has been expanded to include gain and sample rate:
+
+```idl
+module FRONTEND {
+    struct RFCapabilities {
+        FreqRange freq_range;
+        FreqRange bw_range;
+        Range sample_rate_range;
+        Range gain_range;
+    };
+}
+```
+
 ## Connection Tracing
 
 RFInfo, RFSource, NavData, and GPS ports inherit from the CF::UpstreamRegistrar interface.
