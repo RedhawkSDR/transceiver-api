@@ -550,6 +550,12 @@ The FRONTEND::payload_format allocation is used to request the payload in the ca
 | FRONTEND::payload_format::native_type | string | binary format (e.g.: float, short, short, ushort)
 | FRONTEND::payload_format::endian | boolean | Set true for big endian, false for little endian
 
+The FRONTEND::upstream allocation is used to require that the allocated device have a connection from the device specified
+
+| ID | name | type | description
+| --- | --- | --- | ---
+| FRONTEND::upstream::device_id | string | device instance id for the upstream device
+
 ## Allocating a set of coherent channels
 
 Unfortunately, some of the data structures needed to allocate an array are currently not available in the IDE.  So the allocations must be made through a programmatic interface like the Python sandbox.
