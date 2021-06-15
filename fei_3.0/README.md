@@ -605,6 +605,54 @@ allocation_response = agg_dev.allocate([alloc_tuner_1, coherent_request_any_feed
 
 If scanning functionality is needed, then each device's scan plan needs to be set independently, where the scan strategy is set for each device separately and the scan start time is set to some arbitrary time in the future.
 
+## Tuner status
+
+The FRONTEND::tuner_status property provides the status of every allocated FEI device.
+The FRONTEND::tuner_status property contains both required and optional elements as follows:
+
+### Required elements
+| ID | name | type | description
+| --- | --- | --- | ---
+| FRONTEND::tuner_status::tuner_type | string | ANTENNA, RX, RX_ARRAY, DBOT, ABOT, ARDC, RDC, SRDC, DRDC, TX, TX_ARRAY, or TDC
+| FRONTEND::tuner_status::allocation_id_csv| string | comma-separated list of allocation ids for this tuner, where the first is the controlling allocation
+| FRONTEND::tuner_status::center_frequency | double | Current center frequency in Hz. Actual tuned frequency rather than the desired frequency (if those values are not the same).
+| FRONTEND::tuner_status::bandwidth | double | Current bandwidth in Hz. Actual bandwidth rather than the desired bandwidth (if those values are not the same).
+| FRONTEND::tuner_status::sample_rate | double | Current sample rate in Hz. Actual sample rate rather than the desired sample rate (if those values are not the same). Can be ignored for such devices as analog tuners
+| FRONTEND::tuner_status::group_id | string | Unique ID that specifies a group of devices. Actual Group ID, regardless whether it was requested in the tuner allocation or not.
+| FRONTEND::tuner_status::rf_flow_id | string | Specifies a certain RF flow to allocate against. Actual RF Flow ID, regardless whether it was requested in the tuner allocation or not.
+| FRONTEND::tuner_status::enabled boolean | Indicates if tuner is enabled. Enabled refers to the output state not any internal hardware/software state.
+
+### Required elements for scanner devices
+
+| ID | name | type | description
+| --- | --- | --- | ---
+| FRONTEND::tuner_status::scan_mode_enabled | boolean | Describes whether or not a scan plan is running on this tuner.
+| FRONTEND::tuner_status::supports_scan | boolean } Describes whether or not this tuner can support a scan plan. Scan plans may not necessarily be available to all tuners in a device
+
+### Optional elements
+
+| ID | name | type | description
+| --- | --- | --- | ---
+| FRONTEND::tuner_status::scan_mode_enabled | boolean | Describes whether or not a scan plan is running on this tuner.
+| FRONTEND::tuner_status::bandwidth_tolerance | double | Allowable percentage over requested bandwidth. Tolerance provided by the requester.
+| FRONTEND::tuner_status::sample_rate_tolerance | double | Allowable percentage over requested sample rate. Tolerance provided by the requester.
+| FRONTEND::tuner_status::complex | boolean | Indicates if the output data is complex. True for complex; False for real.
+| FRONTEND::tuner_status::gain | double | Current gain in dB
+| FRONTEND::tuner_status::agc | boolean | Indicates if the tuner has AGC enabled. Even if AGC is enabled, the device still reports the current gain in the gain property.
+| FRONTEND::tuner_status::valid | boolean | Indicates if the tuner is in a valid state. When the tuner is of type DDC, False indicates that the DDC channel is no longer able to tune to the appropriate frequency because the CHANNELIZER it is attached to has been moved.
+| FRONTEND::tuner_status::available_frequency | string | Valid potential center frequencies for the tuner in Hz. In range(XX-YY) or csv (X,Y,Z) format.
+| FRONTEND::tuner_status::available_bandwidth | string | Valid potential bandwidth for the tuner in Hz. In range(XX-YY) or csv (X,Y,Z) format.
+| FRONTEND::tuner_status::available_gain | string | Valid potential gain for the tuner in dB. In range(XX-YY) or csv (X,Y,Z) format.
+| FRONTEND::tuner_status::available_sample_rate | string | Valid potential sample rates for the tuner. In range(XX-YY) or csv (X,Y,Z) format.
+| FRONTEND::tuner_status::reference_source | long | Indicates internal vs external reference source. 0 = internal reference; 1 = external reference.
+| FRONTEND::tuner_status::output_format | string | Indicates current output data format. Uses the SDDS digraph format.
+| FRONTEND::tuner_status::output_multicast | string | Multicast address for SDDS output. Multicast address in dotted quad notation (e.g., “192.168.0.1”).
+| FRONTEND::tuner_status::output_vlan | long | vlan number for SDDS output. If there is no vlan used, indicate that with a zero.
+| FRONTEND::tuner_status::output_port | long | port number for SDDS output.
+| FRONTEND::tuner_status::decimation | long | Current decimation of tuner. Decimation values for DDC tuners. Defined as the ratio of input sample rate to output sample rate regardless of data format.
+| FRONTEND::tuner_status::tuner_number | short | Physical tuner ID. Tuner ID number within device. May represent physical tuner ordering or virtual ordering in software
+| FRONTEND::tuner_status::settling_time | double | Settling time after re-tuning in seconds
+
 ## Connecting to the Device's Output
 
 A benefit of this approach is that each tuner is single-channel, which means that there is not multi-out functionality controlled by a connectionTable. The only data outputs are out of each single-channel tuner, and each tuner supports a single stream. This means that no special name convention is needed for the connection id.
