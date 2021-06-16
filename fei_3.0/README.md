@@ -372,6 +372,8 @@ Each structure contains:
 
 The Allocation structure returns the actual allocations because they may differ from the request.
 For example, in the case of a tuner, while a request may be for 12 kHz of bandwidth, if the device can only be configured to 12.5 kHz bandwidth, then the returned allocation value is 12.5 kHz.
+The amount of divergence between the requested and the actual value for the device parameter is controlled by the "tolerance" value in the allocation request.
+For example, if the requested bandwidth is 12 kHz and the tolerance is set to 10 (the value is in percent), then the maximum allowable returned value is 13.2 kHz.
 
 All the structures returned in a single `allocate()` call relate to the same allocation.
 For example, if a coherent receive array is requested, the return value would contain an Allocation structure instance for each receive tuner that makes up the receive array.
