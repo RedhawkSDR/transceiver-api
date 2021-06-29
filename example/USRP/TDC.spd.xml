@@ -6,9 +6,9 @@
     <name>null</name>
   </author>
   <propertyfile type="PRF">
-    <localfile name="RDC.prf.xml"/>
+    <localfile name="TDC.prf.xml"/>
   </propertyfile>
   <descriptor>
-    <localfile name="RDC.scd.xml"/>
+    <localfile name="TDC.scd.xml"/>
   </descriptor>
 </softpkg>
