@@ -675,7 +675,7 @@ std::string USRP_i::getTunerType(const std::string& allocation_id) {
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->getTunerType(allocation_id.c_str());
             }
@@ -688,7 +688,7 @@ bool USRP_i::getTunerDeviceControl(const std::string& allocation_id) {
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->getTunerDeviceControl(allocation_id.c_str());
             }
@@ -701,7 +701,7 @@ std::string USRP_i::getTunerGroupId(const std::string& allocation_id) {
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 std::string retval = ossie::corba::returnString(port->getTunerGroupId(allocation_id.c_str()));
                 return retval;
@@ -715,7 +715,7 @@ std::string USRP_i::getTunerRfFlowId(const std::string& allocation_id) {
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 std::string retval = ossie::corba::returnString(port->getTunerRfFlowId(allocation_id.c_str()));
                 return retval;
@@ -730,7 +730,7 @@ void USRP_i::setTunerCenterFrequency(const std::string& allocation_id, double fr
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->setTunerCenterFrequency(allocation_id.c_str(), freq);
             }
@@ -744,7 +744,7 @@ double USRP_i::getTunerCenterFrequency(const std::string& allocation_id) {
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->getTunerCenterFrequency(allocation_id.c_str());
             }
@@ -758,7 +758,7 @@ void USRP_i::setTunerBandwidth(const std::string& allocation_id, double bw) {
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->setTunerBandwidth(allocation_id.c_str(), bw);
             }
@@ -772,7 +772,7 @@ double USRP_i::getTunerBandwidth(const std::string& allocation_id) {
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->getTunerBandwidth(allocation_id.c_str());
             }
@@ -786,7 +786,7 @@ void USRP_i::setTunerAgcEnable(const std::string& allocation_id, bool enable)
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->setTunerAgcEnable(allocation_id.c_str(), enable);
             }
@@ -799,7 +799,7 @@ bool USRP_i::getTunerAgcEnable(const std::string& allocation_id)
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->getTunerAgcEnable(allocation_id.c_str());
             }
@@ -813,7 +813,7 @@ void USRP_i::setTunerGain(const std::string& allocation_id, float gain)
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->setTunerGain(allocation_id.c_str(), gain);
             }
@@ -826,7 +826,7 @@ float USRP_i::getTunerGain(const std::string& allocation_id)
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->getTunerGain(allocation_id.c_str());
             }
@@ -840,7 +840,7 @@ void USRP_i::setTunerReferenceSource(const std::string& allocation_id, long sour
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->setTunerReferenceSource(allocation_id.c_str(), source);
             }
@@ -853,7 +853,7 @@ long USRP_i::getTunerReferenceSource(const std::string& allocation_id)
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->getTunerReferenceSource(allocation_id.c_str());
             }
@@ -866,7 +866,7 @@ void USRP_i::setTunerEnable(const std::string& allocation_id, bool enable) {
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->setTunerEnable(allocation_id.c_str(), enable);
             }
@@ -880,7 +880,7 @@ bool USRP_i::getTunerEnable(const std::string& allocation_id) {
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->getTunerEnable(allocation_id.c_str());
             }
@@ -894,7 +894,7 @@ void USRP_i::setTunerOutputSampleRate(const std::string& allocation_id, double s
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->setTunerOutputSampleRate(allocation_id.c_str(), sr);
             }
@@ -908,7 +908,7 @@ double USRP_i::getTunerOutputSampleRate(const std::string& allocation_id){
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->getTunerOutputSampleRate(allocation_id.c_str());
             }
@@ -922,7 +922,7 @@ void USRP_i::configureTuner(const std::string& allocation_id, const CF::Properti
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->configureTuner(allocation_id.c_str(), tunerSettings);
             }
@@ -934,7 +934,7 @@ CF::Properties* USRP_i::getTunerSettings(const std::string& allocation_id){
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalTuner_ptr port = FRONTEND::DigitalTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->getTunerSettings(allocation_id.c_str());
             }
@@ -949,7 +949,7 @@ frontend::ScanStatus USRP_i::getScanStatus(const std::string& allocation_id) {
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalScanningTuner_ptr port = FRONTEND::DigitalScanningTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalScanningTuner_ptr port = FRONTEND::DigitalScanningTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 FRONTEND::ScanningTuner::ScanStatus_var tmpVal = port->getScanStatus(allocation_id.c_str());
                 switch (tmpVal->strategy.scan_mode) {
@@ -1036,7 +1036,7 @@ void USRP_i::setScanStartTime(const std::string& allocation_id, const BULKIO::Pr
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalScanningTuner_ptr port = FRONTEND::DigitalScanningTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalScanningTuner_ptr port = FRONTEND::DigitalScanningTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 return port->setScanStartTime(allocation_id.c_str(), start_time);
             }
@@ -1048,7 +1048,7 @@ void USRP_i::setScanStrategy(const std::string& allocation_id, const frontend::S
     long idx = getTunerMapping(allocation_id);
     if (idx < 0) {
         if (_delegatedAllocations.find(allocation_id) != _delegatedAllocations.end()) {
-            FRONTEND::DigitalScanningTuner_ptr port = FRONTEND::DigitalScanningTuner::_narrow(_delegatedAllocations[allocation_id][0].control_port);
+            FRONTEND::DigitalScanningTuner_ptr port = FRONTEND::DigitalScanningTuner::_narrow(_delegatedAllocations[allocation_id][0].control_ports[0].port_ref);
             if (port) {
                 const frontend::ScanStrategy& ref_scan_strategy = *scan_strategy;
                 FRONTEND::ScanningTuner::ScanStrategy_var tmp_strat = frontend::returnScanStrategy(ref_scan_strategy);
