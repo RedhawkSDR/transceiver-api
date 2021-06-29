@@ -25,19 +25,13 @@
     <processor name="x86_64"/>
   </implementation>
   <child name="RDC">
-    <childPropertyFile>
-        <localfile name="RDC.prf.xml"/>
-    </childPropertyFile>
-    <childDescriptorFile>
-        <localfile name="RDC.scd.xml"/>
-    </childDescriptorFile>
+    <childSoftwarePackageFile>
+        <localfile name="RDC.spd.xml"/>
+    </childSoftwarePackageFile>
   </child>
   <child name="TDC">
-    <childPropertyFile>
-        <localfile name="TDC.prf.xml"/>
-    </childPropertyFile>
-    <childDescriptorFile>
-        <localfile name="TDC.scd.xml"/>
-    </childDescriptorFile>
+    <childSoftwarePackageFile>
+        <localfile name="TDC.spd.xml"/>
+    </childSoftwarePackageFile>
   </child>
 </softpkg>
