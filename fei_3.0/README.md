@@ -182,8 +182,8 @@ An example definition of child devices with respect to a parent device is shown 
 
 ![Parent/Child Device Definition and Generation](device_generation.png)
 
-The parent device is defined by three XML files:  Software Package Descriptor (SPD), Software Component Descriptor (SCD), and Properties Definition (PRF).
-Since child devices share the SPD with the parent, they only require SCD and PRF files.
+The parent and child devices are defined by three XML files:  Software Package Descriptor (SPD), Software Component Descriptor (SCD), and Properties Definition (PRF).
+The parent SPD file contains a list of the different child SPD files.
 The generated code is a single project that contains all device classes.
 
 Devices are deployed programmatically at runtime using the `addChild` method in the Device base class.
@@ -195,8 +195,10 @@ my_parent
 |   my_parent.spd.xml
 |   my_parent.scd.xml
 |   my_parent.prf.xml
+|   child_class_a.spd.xml
 |   child_class_a.scd.xml
 |   child_class_a.prf.xml
+|   child_class_b.spd.xml
 |   child_class_b.scd.xml
 |   child_class_b.prf.xml
 |   reconf
