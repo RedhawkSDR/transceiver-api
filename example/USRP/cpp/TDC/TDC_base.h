@@ -8,11 +8,11 @@
 
 #include <frontend/frontend.h>
 #include <bulkio/bulkio.h>
-//#include "TDC_struct_props.h"
-#include "../struct_props.h"
+#include "TDC_struct_props.h"
 
 #define BOOL_VALUE_HERE 0
 
+namespace TDC_ns {
 class TDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_struct_struct>, public virtual frontend::transmit_control_delegation, protected ThreadedComponent, public virtual DynamicComponent
 {
     public:
@@ -59,5 +59,6 @@ class TDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_stru
 
     private:
         void construct();
+};
 };
 #endif // TDC_BASE_IMPL_BASE_H

@@ -9,11 +9,11 @@
 #include <frontend/frontend.h>
 #include "RDC_port_impl.h"
 #include <bulkio/bulkio.h>
-//#include "RDC_struct_props.h"
-#include "../struct_props.h"
+#include "RDC_struct_props.h"
 
 #define BOOL_VALUE_HERE 0
 
+namespace RDC_ns {
 class RDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_struct_struct>, public virtual frontend::digital_tuner_delegation, public virtual frontend::rfinfo_delegation, protected ThreadedComponent, public virtual DynamicComponent
 {
     friend class CF_DeviceStatus_Out_i;
@@ -70,5 +70,6 @@ class RDC_base : public frontend::FrontendTunerDevice<frontend_tuner_status_stru
 
     private:
         void construct();
+};
 };
 #endif // RDC_BASE_IMPL_BASE_H

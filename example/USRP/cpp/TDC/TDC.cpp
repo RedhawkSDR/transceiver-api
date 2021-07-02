@@ -9,6 +9,8 @@
 
 #include "TDC.h"
 
+using namespace TDC_ns;
+
 PREPARE_LOGGING(TDC_i)
 
 TDC_i::TDC_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :

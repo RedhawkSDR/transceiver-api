@@ -9,6 +9,7 @@
 #include <utility>
 #include <ossie/CF/QueryablePort.h>
 
+namespace RDC_ns {
 class RDC_base;
 class RDC_i;
 
@@ -19,7 +20,6 @@ class RDC_i;
 // ----------------------------------------------------------------------------------------
 class CF_DeviceStatus_Out_i : public Port_Uses_base_impl, public POA_ExtendedCF::QueryablePort
 {
-    ENABLE_LOGGING
     public:
         CF_DeviceStatus_Out_i(std::string port_name, RDC_base *_parent);
         ~CF_DeviceStatus_Out_i();
@@ -122,5 +122,6 @@ class CF_DeviceStatus_Out_i : public Port_Uses_base_impl, public POA_ExtendedCF:
         std::vector < std::pair<CF::DeviceStatus_var, std::string> > outConnections;
         ExtendedCF::UsesConnectionSequence recConnections;
         bool recConnectionsRefresh;
+};
 };
 #endif // PORT_H

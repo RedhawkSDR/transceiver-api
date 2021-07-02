@@ -9,6 +9,8 @@
 
 #include "RDC.h"
 
+using namespace RDC_ns;
+
 PREPARE_LOGGING(RDC_i)
 
 RDC_i::RDC_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :

@@ -5,6 +5,7 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include "../uhd_access.h"
 
+namespace TDC_ns {
 class TDC_i : public TDC_base
 {
     ENABLE_LOGGING
@@ -81,6 +82,7 @@ class TDC_i : public TDC_base
         bool deviceSetTuning(const frontend::frontend_tuner_allocation_struct &request, frontend_tuner_status_struct_struct &fts, size_t tuner_id);
         bool deviceDeleteTuning(frontend_tuner_status_struct_struct &fts, size_t tuner_id);
 
+};
 };
 
 #endif // TDC_I_IMPL_H

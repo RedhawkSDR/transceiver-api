@@ -116,14 +116,14 @@ void USRP_i::constructor()
         for (unsigned int i=0; i<num_rx_channels; i++) {
             std::ostringstream rdc_name;
             rdc_name << "RDC_" << i+1;
-            RDCs.push_back(this->addChild<RDC_i>(rdc_name.str()));
+            RDCs.push_back(this->addChild<RDC_ns::RDC_i>(rdc_name.str()));
             RDCs.back()->setTunerNumber(i);
             RDCs.back()->setUHDptr(usrp_device_ptr);
         }
         for (unsigned int i=0; i<num_tx_channels; i++) {
             std::ostringstream tdc_name;
             tdc_name << "TDC_" << i+1;
-            TDCs.push_back(this->addChild<TDC_i>(tdc_name.str()));
+            TDCs.push_back(this->addChild<TDC_ns::TDC_i>(tdc_name.str()));
             TDCs.back()->setTunerNumber(i);
             TDCs.back()->setUHDptr(usrp_device_ptr);
         }
@@ -136,7 +136,7 @@ void USRP_i::constructor()
 std::vector<frontend_tuner_status_struct_struct> USRP_i::get_fts()
 {
     frontend_tuner_status.resize(0);
-    for (std::vector<RDC_i*>::iterator it=RDCs.begin(); it!=RDCs.end(); it++) {
+    for (std::vector<RDC_ns::RDC_i*>::iterator it=RDCs.begin(); it!=RDCs.end(); it++) {
         Device_impl* dev = dynamic_cast<Device_impl*>(*it);
         CF::Properties prop;
         prop.length(1);
@@ -154,7 +154,7 @@ std::vector<frontend_tuner_status_struct_struct> USRP_i::get_fts()
             }
         }
     }
-    for (std::vector<TDC_i*>::iterator it=TDCs.begin(); it!=TDCs.end(); it++) {
+    for (std::vector<TDC_ns::TDC_i*>::iterator it=TDCs.begin(); it!=TDCs.end(); it++) {
         Device_impl* dev = dynamic_cast<Device_impl*>(*it);
         CF::Properties prop;
         prop.length(1);
@@ -601,7 +601,7 @@ throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CF::Device::Insuff
         throw CF::Device::InvalidState(invalidState);
     }
 
-    for (std::vector<RDC_i*>::iterator it=RDCs.begin(); it!=RDCs.end(); it++) {
+    for (std::vector<RDC_ns::RDC_i*>::iterator it=RDCs.begin(); it!=RDCs.end(); it++) {
         result = (*it)->allocate(local_capacities);
         if (result->length() > 0) {
             _delegatedAllocations[allocation_id] = result;
@@ -609,7 +609,7 @@ throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CF::Device::Insuff
         }
     }
 
-    for (std::vector<TDC_i*>::iterator it=TDCs.begin(); it!=TDCs.end(); it++) {
+    for (std::vector<TDC_ns::TDC_i*>::iterator it=TDCs.begin(); it!=TDCs.end(); it++) {
         result = (*it)->allocate(local_capacities);
         if (result->length() > 0) {
             _delegatedAllocations[allocation_id] = result;

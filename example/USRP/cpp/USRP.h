@@ -64,8 +64,8 @@ class USRP_i : public USRP_base
         void set_rfinfo_pkt(const std::string& port_name, const frontend::RFInfoPkt& pkt);
 
 
-        std::vector<RDC_i*> RDCs;
-        std::vector<TDC_i*> TDCs;
+        std::vector<RDC_ns::RDC_i*> RDCs;
+        std::vector<TDC_ns::TDC_i*> TDCs;
         std::map<std::string, CF::Device::Allocations_var> _delegatedAllocations;
         uhd::usrp::multi_usrp::sptr usrp_device_ptr;
         // Try to synchronize the USRP time to its clock source

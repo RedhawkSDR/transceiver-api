@@ -10,6 +10,8 @@
 
 ******************************************************************************************/
 
+using namespace RDC_ns;
+
 RDC_base::RDC_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :
     frontend::FrontendTunerDevice<frontend_tuner_status_struct_struct>(devMgr_ior, id, lbl, sftwrPrfl),
     ThreadedComponent()

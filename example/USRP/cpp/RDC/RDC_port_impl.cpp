@@ -8,6 +8,7 @@
 
 #include "RDC.h"
 
+using namespace RDC_ns;
 
 /******************************************
  *
@@ -22,7 +23,6 @@
 // ----------------------------------------------------------------------------------------
 // CF_DeviceStatus_Out_i definition
 // ----------------------------------------------------------------------------------------
-PREPARE_ALT_LOGGING(CF_DeviceStatus_Out_i,RDC_i)
 CF_DeviceStatus_Out_i::CF_DeviceStatus_Out_i(std::string port_name, RDC_base *_parent) :
 Port_Uses_base_impl(port_name)
 {
@@ -48,7 +48,7 @@ void CF_DeviceStatus_Out_i::statusChanged(const CF::DeviceStatusType& status, co
             try {
                 ((*i).first)->statusChanged(status);
             } catch (...) {
-                LOG_ERROR(CF_DeviceStatus_Out_i,"Call to statusChanged by CF_DeviceStatus_Out_i failed");
+                RH_ERROR(this->_portLog, "Call to statusChanged by CF_DeviceStatus_Out_i failed");
                 throw;
             }
         }

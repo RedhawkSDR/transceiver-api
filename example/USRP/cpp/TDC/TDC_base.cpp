@@ -10,6 +10,8 @@
 
 ******************************************************************************************/
 
+using namespace TDC_ns;
+
 TDC_base::TDC_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :
     frontend::FrontendTunerDevice<frontend_tuner_status_struct_struct>(devMgr_ior, id, lbl, sftwrPrfl),
     ThreadedComponent()
