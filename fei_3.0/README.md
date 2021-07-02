@@ -188,7 +188,9 @@ The generated code is a single project that contains all device classes.
 
 Devices are deployed programmatically at runtime using the `addChild` method in the Device base class.
 The `addChild` method is invoked on the logical parent of the child device.
-For example, suppose that XML is defined for device "my_parent", "child_class_a", and "child_class_b".  Then code generation would produce the following file tree:
+For example, suppose that XML is defined for device "my_parent", "child_class_a", and "child_class_b".
+In C++, the children classes are generated in their own namespace to avoid naming conflicts in properties and to allow children to have a different frontend tuner status property than the parent.
+Then code generation would produce the following file tree:
 
 ```
 my_parent
@@ -238,10 +240,10 @@ void my_parent_i::constructor()
     std::string child_class_a_name("child_class_a");
     std::string child_class_b_name("child_class_b");
 
-    child_class_a_i* first_layer_a = this->addChild<child_class_a_i>(child_class_a_name);
-    child_class_a_i* first_layer_b = this->addChild<child_class_a_i>(child_class_b_name);
+    child_class_a::child_class_a_i* first_layer_a = this->addChild<child_class_a::child_class_a_i>(child_class_a_name);
+    child_class_a::child_class_a_i* first_layer_b = this->addChild<child_class_a::child_class_a_i>(child_class_b_name);
 
-    child_class_a_i* second_layer_b = first_layer_a->addChild<child_class_a_i>(child_class_b_name);
+    child_class_a::child_class_a_i* second_layer_b = first_layer_a->addChild<child_class_a::child_class_a_i>(child_class_b_name);
 }
 ```
 
@@ -250,12 +252,12 @@ Below is an example of using `_dynamicComponents`:
 
 ``` c++
 for (unsigned int i=0; i<_dynamicComponents.size(); i++) {
-    child_class_a_i* base_dev = dynamic_cast<child_class_a_i*>(_dynamicComponents[i]);
+    child_class_a::child_class_a_i* base_dev = dynamic_cast<child_class_a::child_class_a_i*>(_dynamicComponents[i]);
     std::cout<<"  "<<_dynamicComponents[i]->_identifier;
     if (base_dev == NULL) {
-        std::cout<<" is not of type child_class_a_i";
+        std::cout<<" is not of type child_class_a::child_class_a_i";
     } else {
-        std::cout<<" is of type child_class_a_i";
+        std::cout<<" is of type child_class_a::child_class_a_i";
     }
     std::cout<<std::endl;
 }
@@ -437,13 +439,13 @@ void rx_array_i::constructor()
     std::string abot_name("abot");
     std::string rdc_name("rdc");
 
-    abot_i* abot_1 = this->addChild<abot_i>(abot_name);
-    rdc_i* rdc_1_1 = abot_1->addChild<rdc_i>(rdc_name);
-    rdc_i* rdc_1_2 = abot_1->addChild<rdc_i>(rdc_name);
+    abot_ns::abot_i* abot_1 = this->addChild<abot_ns::abot_i>(abot_name);
+    rdc_ns::rdc_i* rdc_1_1 = abot_1->addChild<rdc_ns::rdc_i>(rdc_name);
+    rdc_ns::rdc_i* rdc_1_2 = abot_1->addChild<rdc_ns::rdc_i>(rdc_name);
 
-    abot_i* abot_2 = this->addChild<abot_i>(abot_name);
-    rdc_i* rdc_2_1 = abot_2->addChild<rdc_i>(rdc_name);
-    rdc_i* rdc_2_2 = abot_2->addChild<rdc_i>(rdc_name);
+    abot_ns::abot_i* abot_2 = this->addChild<abot_ns::abot_i>(abot_name);
+    rdc_ns::rdc_i* rdc_2_1 = abot_2->addChild<rdc_ns::rdc_i>(rdc_name);
+    rdc_ns::rdc_i* rdc_2_2 = abot_2->addChild<rdc_ns::rdc_i>(rdc_name);
 }
 ```
 
